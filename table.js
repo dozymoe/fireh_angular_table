@@ -2,7 +2,7 @@
 
 require('./core_mixins');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
     .directive('fhTable', ['FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',

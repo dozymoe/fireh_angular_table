@@ -2,7 +2,7 @@
 
 require('./core_mixins');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
     .directive('fhTableFilterText', ['$compile', '$templateRequest',
             'FhTableDefinitionMixin',
@@ -41,7 +41,7 @@ angular.module('fireh-angular-table', [])
             var templateUrl = attrs.templateUrl;
 
             var templateHtml =
-                '<div class="input-group oc-table-filter-text" ng-if="label"> ' +
+                '<div class="input-group fh-table-filter-text" ng-if="label"> ' +
                 '  <span class="form-label">{{ label }}</span> ' +
                 '  <input type="text" class="form-control" ' +
                 '      name="{{ name }}" ' +

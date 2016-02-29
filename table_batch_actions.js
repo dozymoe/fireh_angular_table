@@ -2,7 +2,7 @@
 
 require('./core_mixins');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
     .directive('fhTableBatchActions', ['FhTableDefinitionMixin',
             function(TableDefinitionMixin) {
@@ -13,7 +13,7 @@ angular.module('fireh-angular-table', [])
         };
 
         myDirective.link = function(scope, el, attrs) {
-            TableDefinitionMixin(scope);
+            TableDefinitionMixin(scope, attrs);
             var params = scope.params;
 
             scope.data.value = '';

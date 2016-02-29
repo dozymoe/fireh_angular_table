@@ -1,14 +1,14 @@
 'use strict';
 
-require('./core');
 require('./core_mixins');
+require('./table_filter_text');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
-    .directive('fhTableFilterSelect', ['$compile', '$parse', '$templateRequest',
+    .directive('fhTableFilterSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
-            function($compile, $parse, $templateRequest, TableDefinition,
+            function($compile, $templateRequest, TableDefinition,
             TableDefinitionMixin, ListResourceControllerMixin) {
 
         var myDirective = {
@@ -82,7 +82,7 @@ angular.module('fireh-angular-table', [])
             var templateUrl = attrs.templateUrl;
 
             var templateHtml = 
-                '<div class="dropdown oc-table-filter-select"> ' +
+                '<div class="dropdown fh-table-filter-select"> ' +
                 '  <span class="form-label">{{ label }}</span> ' +
                 '  <button class="btn btn-default dropdown-toggle" ' +
                 '      type="button" id="{{ elementId }}" ' +
@@ -100,12 +100,12 @@ angular.module('fireh-angular-table', [])
                 '  <div class="dropdown-menu" ' +
                 '      aria-labelledby="{{ elementId }}"> ' +
 
-                '    <div class="input-group oc-table-filter-text" ' +
-                '        data-oc-table-filter-text ' +
+                '    <div class="input-group fh-table-filter-text" ' +
+                '        data-fh-table-filter-text ' +
                 '        data-name="{{ filterName }}" ' +
                 '        data-placeholder="{{ filterPlaceholder }}"/> ' +
 
-                '    <ul data-oc-infinite-scroll/> ' +
+                '    <ul data-fh-infinite-scroll/> ' +
                 '  </div> ' +
                 '</div> ';
 

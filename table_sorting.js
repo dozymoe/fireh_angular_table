@@ -2,7 +2,7 @@
 
 require('./core_mixins');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
     .directive('fhTableSorting', ['$compile', '$templateRequest',
             'FhTableDefinitionMixin',
@@ -16,7 +16,7 @@ angular.module('fireh-angular-table', [])
         myDirective.controller = function($scope, $element, $attrs) {
             var name = $attrs.name || $attrs.fhTableSorting;
 
-            TableDefinitionMixin($scope);
+            TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
 
             $scope.priority = 0;
@@ -72,7 +72,7 @@ angular.module('fireh-angular-table', [])
             var templateUrl = attrs.templateUrl;
 
             var templateHtml =
-                '<div class="dropdown oc-table-sorting"> ' +
+                '<div class="dropdown fh-table-sorting"> ' +
                 '  <button type="button" class="dropdown-toggle" ' +
                 '      ng-class="{active: priority}" ' +
                 '      data-toggle="dropdown" aria-haspopup="true" ' +
@@ -87,11 +87,11 @@ angular.module('fireh-angular-table', [])
                 '        aria-label="{{ \'descending\' }}" ' +
                 '        ng-if="priority && direction === \'desc\'"/> ' +
 
-                '    <span class="sort-priority"
+                '    <span class="sort-priority" ' +
                 '        ng-if="priority">{{ priority }}</span> ' +
 
                 '  </button> ' +
-                '  <ul class="dropdown-menu">
+                '  <ul class="dropdown-menu"> ' +
                 '    <li ng-class="{disabled: direction === \'asc\'}"> ' +
                 '      <a href="#" ng-click="sortAsc($event)"> ' +
                 '        {{ \'Sort ascending\' }} ' +

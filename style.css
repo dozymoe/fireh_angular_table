@@ -1,0 +1,62 @@
+/* table filter select */
+
+.fh-table-filter-select > button > span:first-child {
+    display: inline-block;
+    margin-right: -1em;
+    width: 100%;
+}
+.fh-table-filter-select > .dropdown-menu > div {
+    margin: 0.25em 0.25em 1em;
+}
+
+.fh-table-filter-select > .dropdown-menu > div > input {
+    width: 100%;
+}
+
+.fh-table-filter-select > .dropdown-menu > ul {
+    margin: 0.25em;
+    max-height: 15em;
+    overflow-y: scroll;
+    padding: 0;
+}
+
+.fh-table-filter-select > .dropdown-menu > ul > li > input {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+.fh-table-filter-select > .dropdown-menu > ul > li > label {
+    font-weight: normal;
+}
+
+
+/* infinite scroll */
+
+.table-wrapper[data-fh-infinite-scroll] {
+    max-height: 40em;
+    overflow-y: scroll;
+}
+
+
+/* table sorting */
+
+[data-fh-table-sorting] {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.fh-table-sorting > button {
+    background-color: transparent;
+    color: #2ec1cc;
+    border: 1px solid #2ec1cc;
+    border-radius: 0.4em;
+    padding: 0 0.5em;
+    vertical-align: middle;
+}
+            
+.fh-table-sorting > button:hover,
+.fh-table-sorting > button:active,
+.fh-table-sorting > button:.active {
+    background-color: #2ec1cc;
+    color: white;
+}

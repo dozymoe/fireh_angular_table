@@ -1,8 +1,9 @@
 'use strict';
 
 require('jquery-infinite-scroll-helper');
+require('./core');
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table')
 
     .directive('fhInfiniteScroll', ['$timeout', function($timeout) {
         var myDirective = {

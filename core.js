@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('fireh-angular-table', [])
+angular.module('fireh_angular_table', [])
 
     .factory('FhTableDefinition', ['$rootScope', function($rootScope) {
         var FhTableDefinition = function(settings) {
@@ -67,5 +67,5 @@ angular.module('fireh-angular-table', [])
         };
 
         return FhTableDefinition;
-    })
+    }])
 ;

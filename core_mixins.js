@@ -1,6 +1,8 @@
 'use strict';
 
-angular.module('fireh-angular-table', [])
+require('./core');
+
+angular.module('fireh_angular_table')
 
     .factory('FhTableDefinitionMixin', ['$parse', function($parse) {
         return function(scope, attrs, alternateAttrField) {
@@ -246,7 +248,7 @@ angular.module('fireh-angular-table', [])
             });
 
             params.on('itemAdded', function(event, item) {
-                var id = _.pick(oldItem, params.items.identifierFields);
+                var id = _.pick(item, params.items.identifierFields);
                 var index = _.findIndex(scope.data.items, id);
                 if (index !== -1) {
                     scope.data.items[index] = item;
