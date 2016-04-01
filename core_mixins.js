@@ -15,8 +15,13 @@ angular.module('fireh_angular_table')
     }])
 
     .factory('FhTableListResourceControllerMixin', function() {
-        return function(scope) {
+        return function(scope, options) {
             var params = scope.params;
+            var initialFetchItems = true;
+
+            if (options === void(0)) {
+                options = {};
+            }
 
             scope.data = {
                 items: [],
@@ -44,6 +49,16 @@ angular.module('fireh_angular_table')
             });
 
             params.on('fetchItems', function fetchItems(event, options) {
+                // initializing table and widgets, delay all item fetches until
+                // we are ready
+                if (initialFetchItems) {
+                    if (options.initialFetchItems) {
+                        initialFetchItems = false;
+                    } else {
+                        return;
+                    }
+                }
+
                 var payload = angular.copy(scope.dataParams);
 
                 if (options.page === 'next') {
@@ -82,6 +97,7 @@ angular.module('fireh_angular_table')
                             hasNextItems: scope.data.items.length < response.total
                         };
                         params.trigger('itemsUpdated', updateNotifOptions);
+                        params.trigger('itemsTotalUpdated', response.total);
                     },
                     function (err) {
                         params.trigger('ajaxRequestFinished');
@@ -185,6 +201,18 @@ angular.module('fireh_angular_table')
                     }
                 });
 
+                params.trigger('resetItems');
+            });
+
+            params.on('setPageOffset', function(event, pageOffset) {
+                scope.dataParams.page = pageOffset;
+                params.trigger('pageOffsetUpdated', pageOffset);
+                params.trigger('fetchItems', {flush: true, page: pageOffset});
+            });
+
+            params.on('setPageSize', function(event, pageSize) {
+                scope.dataParams.pageSize = pageSize;
+                params.trigger('pageSizeUpdated', pageSize);
                 params.trigger('resetItems');
             });
 

@@ -5,7 +5,7 @@ require('./table_filter_text');
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableFilterSelect', ['$compile', '$templateRequest',
+    .directive('fhTableFieldSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
             function($compile, $templateRequest, TableDefinition,
@@ -21,7 +21,7 @@ angular.module('fireh_angular_table')
             // filterPlaceholder and label are observed in the middle of this
             // function
             var filterName = $attrs.filterName;
-            var name = $attrs.name || $attrs.fhTableFilterSelect;
+            var name = $attrs.name || $attrs.fhTableFieldSelect;
             var pageSize = $attrs.size;
             var orderBy = $attrs.orderBy;
             var orderDir = $attrs.orderDir || 'asc';
@@ -35,13 +35,13 @@ angular.module('fireh_angular_table')
 
             // our own data params
             params = $scope.params = new TableDefinition(
-                    tableParams.filterDefinition[name]);
+                    tableParams.fieldDefinition[name]);
 
             $scope.filterName = filterName;
             $scope.name = name;
 
             $attrs.$observe('filterPlaceholder', function(value) {
-                $scope.filterPlaceholder = value;
+                $scope.fieldPlaceholder = value;
             });
             $attrs.$observe('label', function(value) {
                 $scope.label = value;
@@ -60,30 +60,18 @@ angular.module('fireh_angular_table')
                 tableParams.trigger('ajaxRequestFinished');
             });
 
-            tableParams.on('filterUpdated', function(event, filterName,
-                        filterValue) {
-
-                if (filterName === name) {
-                    $scope.data.value = filterValue;
-                }
-            });
-
             params.on('itemSelected', function(event, item) {
-                tableParams.trigger('addMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFileds));
             });
 
             params.on('itemDeselected', function(event, item) {
-                tableParams.trigger('removeMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFields));
             });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
             var templateUrl = attrs.templateUrl;
 
-            var templateHtml = 
-                '<div class="dropdown fh-table-filter-select"> ' +
+            var templateHtml =
+                '<div class="dropdown fh-table-field-select"> ' +
                 '  <span class="form-label">{{ label }}</span> ' +
                 '  <button class="btn btn-default dropdown-toggle" ' +
                 '      type="button" id="{{ elementId }}" ' +
@@ -108,10 +96,10 @@ angular.module('fireh_angular_table')
 
                 '    <ul data-fh-infinite-scroll/> ' +
                 '  </div> ' +
-                '</div> ';
+                '</div>';
 
             function printHtml(htmlStr) {
-                // get directive content and insert into template
+                // get directive cotnent and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr).show();
                     el.find('.dropdown-menu > ul').append(clone);
@@ -120,16 +108,10 @@ angular.module('fireh_angular_table')
             }
 
             if (templateUrl) {
-                // get template
                 $templateRequest(templateUrl).then(printHtml);
             } else {
                 printHtml(templateHtml);
             }
-
-            // trigger filterUpdated to initialize all filters
-            _.forOwn(scope.dataParams.filterBy, function(value, key) {
-                scope.params.trigger('filterUpdated', key, value);
-            });
 
             scope.params.trigger('resetItems');
         };

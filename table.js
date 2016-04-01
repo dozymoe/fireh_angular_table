@@ -47,7 +47,13 @@ angular.module('fireh_angular_table')
                         direction: value[1], priority: parseInt(key) + 1});
             });
 
-            scope.params.trigger('fetchItems', {});
+            // trigger pageOffsetUpdated to initialize pager widgets
+            scope.params.trigger('pageOffsetUpdated', scope.dataParams.page);
+
+            // trigger pageSizeUpdated to initialize pager widgets
+            scope.params.trigger('pageSizeUpdated', scope.dataParams.pageSize);
+
+            scope.params.trigger('fetchItems', {initialFetchItems: true});
         };
 
         return myDirective;
