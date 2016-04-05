@@ -7,21 +7,28 @@ angular.module('fireh_angular_table', [])
             // use angular.merge on newer version
             _.merge(this, {
                 fieldDefinition: {},
+
                 filter: {
                     throttle: 500
                 },
                 filterBy: {},
                 filterDefinition: {},
+
                 items: {
                     getter: null,
-                    identifierFields: 'id', // will be used with _.pick()
+                    //identifierFields: 'id', // will be used with _.pick()
                     page: 1,
                     pageSize: 20
                 },
+
                 orderBy: [],
                 orderDefinition: {}
             });
             _.merge(this, settings);
+
+            if (console.assert) {
+                console.assert(this.items.identifierFields !== void(0), "FhTableDefinition: identifierFields is required.");
+            }
 
             var scope = this.scope = $rootScope.$new();
 
@@ -61,6 +68,33 @@ angular.module('fireh_angular_table', [])
                     pageSize: data.pageSize || 0
                 };
                 return payload;
+            };
+
+            this.getFieldId = function getFieldId(fieldName, item) {
+                // check if field has identifierFields
+                if (this.fieldDefinition[fieldName] &&
+                        this.fieldDefinition[fieldName].items &&
+                        this.fieldDefinition[fieldName].items.identifierFields) {
+
+                    return _.pick(item, this.fieldDefinition[fieldName].items.
+                            identifierFields);
+
+                } else {
+                    return item;
+                }
+            };
+
+            this.isFieldsEqual = function isFieldsEqual(fieldName, item1, item2) {
+                return _.isEqual(this.getFieldId(fieldName, item1),
+                        this.getFieldId(fieldName, item2));
+            };
+
+            this.getItemId = function getItemId(item) {
+                return _.pick(item, this.items.identifierFields);
+            };
+
+            this.isItemsEqual = function isItemsEqual(item1, item2) {
+                return _.isEqual(this.getItemId(item1), this.getItemId(item2));
             };
 
             return this;

@@ -19,9 +19,11 @@ angular.module('fireh_angular_table')
             var params = scope.params;
             var initialFetchItems = true;
 
-            if (options === void(0)) {
-                options = {};
-            }
+            options = _.merge(
+                {
+                    multipleSelection: true
+                },
+                options || {});
 
             scope.data = {
                 items: [],
@@ -221,6 +223,10 @@ angular.module('fireh_angular_table')
                 if (!item) {
                     item = _.find(scope.data.items, itemId);
                     if (item) {
+                        if (!options.multipleSelection && scope.data.selectedItems.length) {
+                            params.trigger('itemDeselected', scope.data.selectedItems[0]);
+                            scope.data.selectedItems.splice(0);
+                        }
                         scope.data.selectedItems.push(item);
                     }
                 }

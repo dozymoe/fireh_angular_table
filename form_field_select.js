@@ -5,7 +5,7 @@ require('./table_filter_text');
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableFilterSelect', ['$compile', '$templateRequest',
+    .directive('fhFormFieldSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
             function($compile, $templateRequest, TableDefinition,
@@ -18,28 +18,18 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            // filterPlaceholder and label are observed in the middle of this
-            // function
+            // dropdownLabel, filterPlaceholder and label are observed in the
+            // middle of this function
             var filterName = $attrs.filterName;
-            var name = $attrs.name || $attrs.fhTableFilterSelect;
             var pageSize = $attrs.size;
             var orderBy = $attrs.orderBy;
             var orderDir = $attrs.orderDir || 'asc';
 
-            TableDefinitionMixin($scope, $attrs);
+            TableDefinitionMixin($scope, $attrs, 'fhFormFieldSelect');
             var params = $scope.params;
-
-            // we are going to have our own data params, store table params in
-            // different variable
-            var tableParams = $scope.tableParams = params;
-
-            // our own data params
-            params = $scope.params = new TableDefinition(
-                    tableParams.filterDefinition[name]);
 
             $scope.dropdownLabel = 'Select';
             $scope.filterName = filterName;
-            $scope.name = name;
 
             $attrs.$observe('dropdownLabel', function(value) {
                 $scope.dropdownLabel = value;
@@ -51,42 +41,20 @@ angular.module('fireh_angular_table')
                 $scope.label = value;
             });
 
-            ListResourceControllerMixin($scope);
+            ListResourceControllerMixin(
+                $scope,
+                {
+                    multipleSelection: false
+                });
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
-
-            params.on('ajaxRequestStarted', function() {
-                tableParams.trigger('ajaxRequestStarted');
-            });
-
-            params.on('ajaxRequestFinished', function() {
-                tableParams.trigger('ajaxRequestFinished');
-            });
-
-            tableParams.on('filterUpdated', function(event, filterName,
-                        filterValue) {
-
-                if (filterName === name) {
-                    $scope.data.value = filterValue;
-                }
-            });
-
-            params.on('itemSelected', function(event, item) {
-                tableParams.trigger('addMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFileds));
-            });
-
-            params.on('itemDeselected', function(event, item) {
-                tableParams.trigger('removeMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFields));
-            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
             var templateUrl = attrs.templateUrl;
 
-            var templateHtml = 
+            var templateHtml =
                 '<div class="dropdown fh-table-filter-select"> ' +
                 '  <span class="form-label" ng-if="label">{{ label }}</span> ' +
                 '  <button class="btn btn-default dropdown-toggle" ' +
@@ -111,30 +79,24 @@ angular.module('fireh_angular_table')
                 '        data-name="{{ filterName }}" ' +
                 '        data-placeholder="{{ filterPlaceholder }}"/> ' +
 
-                '    <div class="fh-table-filter-select-content"/> ' +
+                '    <div class="fh-form-field-select-content"/> ' +
                 '  </div> ' +
                 '</div> ';
 
             function printHtml(htmlStr) {
-                // get directive content and insert into template
+                // get directive cotnent and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr).show();
-                    el.find('.fh-table-filter-select-content').append(clone);
+                    el.find('.fh-form-field-select-content').append(clone);
                     $compile(el.contents())(scope);
                 });
             }
 
             if (templateUrl) {
-                // get template
                 $templateRequest(templateUrl).then(printHtml);
             } else {
                 printHtml(templateHtml);
             }
-
-            // trigger filterUpdated to initialize all filters
-            _.forOwn(scope.dataParams.filterBy, function(value, key) {
-                scope.params.trigger('filterUpdated', key, value);
-            });
 
             scope.params.trigger('fetchItems', {initialFetchItems: true});
         };

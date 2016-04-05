@@ -19,12 +19,13 @@ angular.module('fireh_angular_table')
             scope.original = scope[attrs.fhTableRow];
             scope.draft = angular.copy(scope.original);
             scope.isEditing = false;
-            scope.isSelected = false;
+
+            scope.isSelected = _.find(scope.data.selectedItems,
+                    params.getItemId(scope.original));
 
             scope.cancel = function rowEditCancel() {
                 scope.isEditing = false;
-                params.trigger('editingEnd', _.pick(scope.original,
-                        params.items.identifierFields));
+                params.trigger('editingEnd', scope.original);
             };
 
             scope.delete = function rowDelete() {
@@ -33,70 +34,65 @@ angular.module('fireh_angular_table')
 
             scope.edit = function rowEdit() {
                 scope.isEditing = true;
-                params.trigger('editingBegin', _.pick(scope.original,
-                        params.items.identifierFields));
+                params.trigger('editingBegin', scope.original);
             };
 
             scope.save = function rowSave() {
                 scope.isEditing = false;
-                params.trigger('editingEnd', _.pick(scope.original,
-                        params.items.identifierFields));
+                params.trigger('editingEnd', scope.original);
 
                 params.trigger('updateItemData', scope.draft, scope.original);
             };
 
-            scope.select = function rowSelect() {
+            scope.select = function rowSelect(event) {
                 var eventName = event.currentTarget.checked ? 'selectItem'
                         : 'deselectItem';
 
-                params.trigger(eventName, _.pick(scope.original,
-                        params.items.identifierFields));
+                params.trigger(eventName, scope.original);
             };
 
             scope.isFieldModified = function isFieldModified(fieldName) {
-                // check if field has identifierFields
-                if (params.fieldDefinition[fieldName] &&
-                        params.fieldDefinition[fieldName].identifierFields) {
-
-                    var idFields = params.fieldDefinition[fieldName]
-                            .identifierFields;
-
-                    var origId = _.pick(scope.original[fieldName], idFields);
-                    var draftId = _.pick(scope.draft[fieldName], idFields);
-                    return !_.isEqual(origId, draftId);
-                } else {
-                    return !_.isEqual(scope.original[fieldName],
-                            scope.draft[fieldName]);
-                }
+                return !params.isFieldsEqual(fieldName, scope.original[fieldName],
+                        scope.draft[fieldName]);
             };
 
-            function isRowItem(item) {
-                var ourId = _.pick(scope.original,
-                        scope.params.identifierFields);
-
-                var itemId = _.pick(item,
-                        scope.params.identifierFields);
-
-                return _.isEqual(ourId, itemId);
-            }
-
             params.on('itemSelected', function(event, item) {
-                if (isRowItem(item)) {
+                if (params.isItemsEqual(scope.original, item)) {
                     scope.isSelected = true;
                 }
             });
 
             params.on('itemDeselected', function(event, item) {
-                if (isRowItem(item)) {
+                if (params.isItemsEqual(scope.original, item)) {
                     scope.isSelected = false;
                 }
             });
 
+            params.on('draftSetField', function(event, item, fieldName, value) {
+                if (params.isItemsEqual(scope.original, item)) {
+                    scope.draft[fieldName] = value;
+                    params.trigger('draftUpdated', scope.draft);
+                }
+            });
+
+            params.on('draftUnsetField', function(event, item, fieldName, value) {
+                if (params.isItemsEqual(scope.original, item) &&
+                        params.isFieldsEqual(fieldName, scope.draft[fieldName],
+                        value)) {
+
+                    scope.draft[fieldName] = null;
+                    params.trigger('draftUpdated', scope.draft);
+                }
+            });
+
             params.on('itemDataUpdated', function(event, item) {
-                if (isRowItem(item)) {
+                if (params.isItemsEqual(scope.original, item)) {
                     scope.original = angular.copy(item);
                 }
             });
+
+            // update field selections and other field editing widgets
+            params.trigger('draftUpdated', scope.draft);
         };
 
         return myDirective;

@@ -14,17 +14,21 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            var label = $attrs.label;
+            // placeholder and label are observed in the middle of this function
             var name = $attrs.name || $attrs.fhTableFilterText || '$';
-            var placeholder = $attrs.placeholder;
 
             TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
 
             $scope.data = {value: ''};
-            $scope.label = label;
             $scope.name = name;
-            $scope.placeholder = placeholder;
+
+            $attrs.$observe('label', function(value) {
+                $scope.label = value;
+            });
+            $attrs.$observe('placeholder', function(value) {
+                $scope.placeholder = value;
+            });
 
             $scope.changeFilter = function changeFilter() {
                 params.trigger('setSingleValueFilter', name, $scope.data.value);
