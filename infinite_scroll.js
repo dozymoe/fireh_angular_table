@@ -1,7 +1,9 @@
 'use strict';
 
-require('jquery-infinite-scroll-helper');
-require('./core');
+if (window.require) {
+    require('jquery-infinite-scroll-helper');
+    require('./core');
+}
 
 angular.module('fireh_angular_table')
 

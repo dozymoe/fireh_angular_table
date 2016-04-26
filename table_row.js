@@ -1,6 +1,8 @@
 'use strict';
 
-require('./core_mixins');
+if (window.require) {
+    require('./core_mixins');
+}
 
 angular.module('fireh_angular_table')
 

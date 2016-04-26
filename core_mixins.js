@@ -1,6 +1,8 @@
 'use strict';
 
-require('./core');
+if (window.require) {
+    require('./core');
+}
 
 angular.module('fireh_angular_table')
 
