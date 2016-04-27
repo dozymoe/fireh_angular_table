@@ -51,10 +51,10 @@ angular.module('fireh_angular_table')
             var templateHtml =
                 '<select data-ng-options="row for row in pageSizes track by row" ' +
                 '  data-ng-model="pageSize" ' +
-                '  data-ng-change="select()" />';
+                '  data-ng-change="select()"></select>';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr).show();
+                el.html(htmlStr);
                 $compile(el.contents())(scope);
             }
 

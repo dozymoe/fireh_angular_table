@@ -120,7 +120,7 @@ angular.module('fireh_angular_table')
             function printHtml(htmlStr) {
                 // get directive content and insert into template
                 transclude(scope, function(clone, scope) {
-                    el.html(htmlStr).show();
+                    el.html(htmlStr);
                     el.find('.fh-table-filter-select-content').append(clone);
                     $compile(el.contents())(scope);
                 });

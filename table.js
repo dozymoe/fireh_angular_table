@@ -6,9 +6,9 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTable', ['FhTableDefinitionMixin',
+    .directive('fhTable', ['$timeout', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
-            function(TableDefinitionMixin, ListResourceControllerMixin) {
+            function($timeout, TableDefinitionMixin, ListResourceControllerMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -38,22 +38,25 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function link(scope) {
-            // trigger filterUpdated to initialize all filters
-            _.forOwn(scope.dataParams.filterBy, function(value, key) {
-                scope.params.trigger('filterUpdated', key, value);
+            // delay messages
+            $timeout(function() {
+                // trigger filterUpdated to initialize all filters
+                _.forOwn(scope.dataParams.filterBy, function(value, key) {
+                    scope.params.trigger('filterUpdated', key, value);
+                });
+
+                // trigger orderUpdated to initialize all sortings
+                _.forOwn(scope.dataParams.orderBy, function(value, key) {
+                    scope.params.trigger('orderUpdated', value[0], {
+                            direction: value[1], priority: parseInt(key) + 1});
+                });
+
+                // trigger pageOffsetUpdated to initialize pager widgets
+                scope.params.trigger('pageOffsetUpdated', scope.dataParams.page);
+
+                // trigger pageSizeUpdated to initialize pager widgets
+                scope.params.trigger('pageSizeUpdated', scope.dataParams.pageSize);
             });
-
-            // trigger orderUpdated to initialize all sortings
-            _.forOwn(scope.dataParams.orderBy, function(value, key) {
-                scope.params.trigger('orderUpdated', value[0], {
-                        direction: value[1], priority: parseInt(key) + 1});
-            });
-
-            // trigger pageOffsetUpdated to initialize pager widgets
-            scope.params.trigger('pageOffsetUpdated', scope.dataParams.page);
-
-            // trigger pageSizeUpdated to initialize pager widgets
-            scope.params.trigger('pageSizeUpdated', scope.dataParams.pageSize);
 
             scope.params.trigger('fetchItems', {initialFetchItems: true});
         };

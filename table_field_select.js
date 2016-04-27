@@ -136,7 +136,7 @@ angular.module('fireh_angular_table')
             function printHtml(htmlStr) {
                 // get directive cotnent and insert into template
                 transclude(scope, function(clone, scope) {
-                    el.html(htmlStr).show();
+                    el.html(htmlStr);
                     el.find('.fh-table-field-select-content').append(clone);
                     $compile(el.contents())(scope);
                 });

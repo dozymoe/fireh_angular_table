@@ -22,8 +22,8 @@ angular.module('fireh_angular_table')
             var params = $scope.params;
 
             $scope.pager = {
-                pageOffset: 1,
-                pageSize: 20,
+                pageOffset: params.items.page,
+                pageSize: params.items.pageSize,
 
                 itemsTotal: 0,
 
@@ -100,16 +100,19 @@ angular.module('fireh_angular_table')
             };
 
             params.on('pageOffsetUpdated', function(event, pageOffset) {
+                if ($scope.pager.pageOffset === pageOffset) { return; }
                 $scope.pager.pageOffset = pageOffset;
                 calculate();
             });
 
             params.on('pageSizeUpdated', function(event, pageSize) {
+                if ($scope.pager.pageSize === pageSize) { return; }
                 $scope.pager.pageSize = pageSize;
                 calculate();
             });
 
             params.on('itemsTotalUpdated', function(event, totalItems) {
+                if ($scope.pager.itemsTotal === totalItems) { return; }
                 $scope.pager.itemsTotal = totalItems;
                 calculate();
             });
@@ -141,7 +144,7 @@ angular.module('fireh_angular_table')
                 '</ul>';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr).show();
+                el.html(htmlStr);
                 $compile(el.contents())(scope);
             }
 

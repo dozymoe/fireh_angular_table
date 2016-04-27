@@ -80,14 +80,14 @@ angular.module('fireh_angular_table')
                 '      data-toggle="dropdown" aria-haspopup="true" ' +
                 '      title="{{ \'Sorting\' }}"> ' +
 
-                '    <span class="fa fa-sort" ng-if="!priority"/> ' +
+                '    <span class="fa fa-sort" ng-if="!priority"></span> ' +
                 '    <span class="fa fa-sort-asc" ' +
                 '        aria-label="{{ \'ascending\' }}" ' +
-                '        ng-if="priority && direction === \'asc\'"/> ' +
+                '        ng-if="priority && direction === \'asc\'"></span> ' +
 
                 '    <span class="fa fa-sort-desc" ' +
                 '        aria-label="{{ \'descending\' }}" ' +
-                '        ng-if="priority && direction === \'desc\'"/> ' +
+                '        ng-if="priority && direction === \'desc\'"></span> ' +
 
                 '    <span class="sort-priority" ' +
                 '        ng-if="priority">{{ priority }}</span> ' +
@@ -125,7 +125,7 @@ angular.module('fireh_angular_table')
                 '</div> ';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr).show();
+                el.html(htmlStr);
                 $compile(el.contents())(scope);
             }
 

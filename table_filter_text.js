@@ -68,7 +68,7 @@ angular.module('fireh_angular_table')
                 '    ng-model-options="{ debounce: { default: 500 } }"/> ';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr).show();
+                el.html(htmlStr);
                 $compile(el.contents())(scope);
             }
 
