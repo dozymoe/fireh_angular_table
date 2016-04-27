@@ -59,7 +59,12 @@ angular.module('fireh_angular_table', [])
                     result.push([key, value]);
                 }, []);
                 // sort filter by name, save into object
-                var sortedFilter = _.zipObject(_.sortBy(cleanedFilter, 0));
+                var sortedFilter = _.sortBy(cleanedFilter, 0);
+                if (_.fromPairs) {
+                    sortedFilter = _.fromPairs(sortedFilter);
+                } else {
+                    sortedFilter = _.zipObject(sortedFilter);
+                }
 
                 var payload = {
                     filterBy: sortedFilter,
