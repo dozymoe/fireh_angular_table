@@ -55,7 +55,7 @@ angular.module('fireh_angular_table')
                 '      ng-change="changeFilter()" ' +
                 '      ng-click="$event.stopPropagation()" ' +
                 '      ng-model="data.value" ' +
-                '      ng-model-options="{ debounce: { default: 500 } }"/> ' +
+                '      ng-model-options="{ debounce: { default: 500 } }"> ' +
 
                 '</div> ' +
                 '<input type="text" class="form-control" ' +
@@ -65,7 +65,7 @@ angular.module('fireh_angular_table')
                 '    ng-click="$event.stopPropagation()" ' +
                 '    ng-if="!label" ' +
                 '    ng-model="data.value" ' +
-                '    ng-model-options="{ debounce: { default: 500 } }"/> ';
+                '    ng-model-options="{ debounce: { default: 500 } }"> ';
 
             function printHtml(htmlStr) {
                 el.html(htmlStr);

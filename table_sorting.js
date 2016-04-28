@@ -104,7 +104,7 @@ angular.module('fireh_angular_table')
                 '        {{ \'Sort descending\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
-                '    <li role="separator" class="divider"/> ' +
+                '    <li role="separator" class="divider"></li> ' +
                 '    <li ng-class="{disabled: priority <= 1}"> ' +
                 '      <a href="#" ng-click="sortBefore($event)"> ' +
                 '        {{ \'Increase priority\' }} ' +
@@ -115,7 +115,7 @@ angular.module('fireh_angular_table')
                 '        {{ \'Decrease priority\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
-                '    <li role="separator" class="divider"/> ' +
+                '    <li role="separator" class="divider"></li> ' +
                 '    <li  ng-class="{disabled: !priority}"> ' +
                 '      <a href="#" ng-click="sortClear($event)"> ' +
                 '        {{ \'Clear\' }} ' +

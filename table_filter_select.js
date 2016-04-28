@@ -98,10 +98,10 @@ angular.module('fireh_angular_table')
 
                 '    <span>{{ dropdownLabel }}</span> ' +
                 '    <span ng-if="!data.selectedItems.length" ' +
-                '        class="fa fa-caret-down"/> ' +
+                '        class="fa fa-caret-down"></span> ' +
 
                 '    <span ng-if="data.selectedItems.length" ' +
-                '        class="fa fa-caret-square-o-down"/> ' +
+                '        class="fa fa-caret-square-o-down"></span> ' +
 
                 '  </button> ' +
                 '  <div class="dropdown-menu" ' +
@@ -111,9 +111,9 @@ angular.module('fireh_angular_table')
                 '        data-ng-if="filterName" ' +
                 '        data-fh-table-filter-text ' +
                 '        data-name="{{ filterName }}" ' +
-                '        data-placeholder="{{ filterPlaceholder }}"/> ' +
+                '        data-placeholder="{{ filterPlaceholder }}"></div> ' +
 
-                '    <div class="fh-table-filter-select-content"/> ' +
+                '    <div class="fh-table-filter-select-content"></div> ' +
                 '  </div> ' +
                 '</div> ';
 
@@ -121,7 +121,11 @@ angular.module('fireh_angular_table')
                 // get directive content and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr);
-                    el.find('.fh-table-filter-select-content').append(clone);
+                    // buggy in jQuery2 :(
+                    //el.find('.fh-table-filter-select-content').append(clone);
+                    angular.element(el[0].querySelector(
+                            '.fh-table-filter-select-content')).append(clone);
+
                     $compile(el.contents())(scope);
                 });
             }

@@ -120,24 +120,29 @@ angular.module('fireh_angular_table')
 
                 '  <span>{{ caption }}</span> ' +
                 '  <span ng-if="!data.selectedItems.length" ' +
-                '      class="fa fa-caret-down"/> ' +
+                '      class="fa fa-caret-down"></span> ' +
 
                 '  <span ng-if="data.selectedItems.length" ' +
-                '      class="fa fa-caret-square-o-down"/> ' +
+                '      class="fa fa-caret-square-o-down"></span> ' +
                 '</button> ' +
 
                 '<div class="modal fade fh-table-field-select" ' +
                 '    id="{{ elementId }}" tabindex="-1" ' +
                 '    role="dialog" aria-labelledby="{{ elementCaptionId }}"> ' +
 
-                '  <div class="modal-body fh-table-field-select-content"/> ' +
+                '  <div class="modal-body fh-table-field-select-content"> ' +
+                '  </div> ' +
                 '</div>';
 
             function printHtml(htmlStr) {
                 // get directive cotnent and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr);
-                    el.find('.fh-table-field-select-content').append(clone);
+                    // buggy in jQuery2 :(
+                    //el.find('.fh-table-field-select-content').append(clone);
+                    angular.element(el[0].querySelector(
+                            '.fh-table-field-select-content')).append(clone);
+
                     $compile(el.contents())(scope);
                 });
             }
