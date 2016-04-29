@@ -163,7 +163,7 @@ angular.module('fireh_angular_table')
 
             params.on('setOrder', function(event, sortingName, sortingValue) {
                 var list = scope.dataParams.orderBy;
-                var priority = _.findIndex(list, [sortingName]) + 1;
+                var priority = _.findIndex(list, function(item) { return item[0] === sortingName }) + 1;
 
                 if (priority) {
                     if (sortingValue) {
