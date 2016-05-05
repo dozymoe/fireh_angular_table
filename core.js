@@ -75,6 +75,35 @@ angular.module('fireh_angular_table', [])
                 return payload;
             };
 
+            this.POST2GETpayload = function POST2GETpayload(payload) {
+              var queryString = {},
+                  params;
+
+              _.forOwn(payload, function(item, key) {
+                if (key !== 'orderBy' && key !== 'filterBy') {
+                  queryString[key] = item;
+                }
+              });
+
+              // orderBy
+              params = _.transform(payload.orderBy, function(result, item) {
+                var direction = item[1] === 'desc' ? '-' : '';
+                    result.push(direction + item[0]);
+              }, []);
+
+              if (params.length) { queryString.orderBy = params.join(','); }
+
+              // filterBy
+              _.forOwn(payload.filterBy, function(item, key) {
+                if (_.isArray(item)) {
+                  item = item.join(',');
+                }
+                queryString['filterBy' + _.capitalize(key)] = item;
+              });
+
+              return queryString;
+            };
+
             this.getFieldId = function getFieldId(fieldName, item) {
                 // check if field has identifierFields
                 if (this.fieldDefinition[fieldName] &&

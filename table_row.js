@@ -18,7 +18,7 @@ angular.module('fireh_angular_table')
             TableDefinitionMixin(scope, attrs);
             var params = scope.params;
 
-            scope.original = scope[attrs.fhTableRow];
+            scope.original = scope[attrs.fhTableRow || attrs.rowItem];
             scope.draft = angular.copy(scope.original);
             scope.isEditing = false;
 

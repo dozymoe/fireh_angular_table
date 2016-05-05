@@ -10,8 +10,10 @@ angular.module('fireh_angular_table')
     .directive('fhTableFilterSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
+            'FhTranscludeChildDirectiveMixin',
             function($compile, $templateRequest, TableDefinition,
-            TableDefinitionMixin, ListResourceControllerMixin) {
+            TableDefinitionMixin, ListResourceControllerMixin,
+            TranscludeChildDirectiveMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -126,6 +128,7 @@ angular.module('fireh_angular_table')
                     angular.element(el[0].querySelector(
                             '.fh-table-filter-select-content')).append(clone);
 
+                    TranscludeChildDirectiveMixin(el);
                     $compile(el.contents())(scope);
                 });
             }

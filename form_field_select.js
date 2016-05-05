@@ -10,8 +10,10 @@ angular.module('fireh_angular_table')
     .directive('fhFormFieldSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
             'FhTableListResourceControllerMixin',
+            'FhTranscludeChildDirectiveMixin',
             function($compile, $templateRequest, TableDefinition,
-            TableDefinitionMixin, ListResourceControllerMixin) {
+            TableDefinitionMixin, ListResourceControllerMixin,
+            TranscludeChildDirectiveMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -94,6 +96,7 @@ angular.module('fireh_angular_table')
                     angular.element(el[0].querySelector(
                             '.fh-form-field-select-content')).append(clone);
 
+                    TranscludeChildDirectiveMixin(el);
                     $compile(el.contents())(scope);
                 });
             }

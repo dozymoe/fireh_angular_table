@@ -16,6 +16,7 @@ angular.module('fireh_angular_table')
         }
     }])
 
+
     .factory('FhTableListResourceControllerMixin', function() {
         return function(scope, options) {
             var params = scope.params;
@@ -315,6 +316,30 @@ angular.module('fireh_angular_table')
                 if (index !== -1) {
                     scope.data.selectedItems[index] = newItem;
                 }
+            });
+        }
+    })
+
+
+    .factory('FhTranscludeChildDirectiveMixin', function() {
+        /* Sub-directives inside directive with transclude will be initialized twice,
+         * something we do not wish to happen. So we need pseudo directive, an
+         * attribute (data-fh-transcluded) that parent directive will checked for
+         * real sub-directive name which is its value.
+         *
+         * The real sub-directive name will be added later by this mixin as attribute
+         * to the html element with attribute `data-fh-transcluded`.
+         *
+         * The temporary attribute (data-fh-transcluded) will be removed.
+         */
+        return function(el) {
+            var attribute_name = 'data-fh-transcluded';
+
+            // angular jQLite's el.find() doesn't work
+            _.forEach(el[0].querySelectorAll('[' + attribute_name + ']'), function(eltr) {
+                var $el = angular.element(eltr);
+                $el.attr($el.attr(attribute_name), '');
+                $el.removeAttr(attribute_name);
             });
         }
     })
