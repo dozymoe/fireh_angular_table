@@ -78,7 +78,7 @@ angular.module('fireh_angular_table')
 
             params.on('itemSelected', function(event, item) {
                 tableParams.trigger('addMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFileds));
+                        _.pick(item, params.items.identifierFields));
             });
 
             params.on('itemDeselected', function(event, item) {
