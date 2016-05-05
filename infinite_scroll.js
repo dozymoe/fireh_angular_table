@@ -16,10 +16,10 @@ angular.module('fireh_angular_table')
         myDirective.link = function(scope, el, attrs) {
             var callback_completed_fn;
             var callback_init;
-            var params = attrs.params || attrs.fhInfiniteScroll || scope.params;
+            var params = attrs.fhpParams || attrs.fhInfiniteScroll || scope.params;
 
-            if (attrs.initCallback && scope[attrs.initCallback]) {
-                callback_init = scope[attrs.initCallback];
+            if (attrs.fhpInitCallback && scope[attrs.fhpInitCallback]) {
+                callback_init = scope[attrs.fhpInitCallback];
             }
 
             function callback(page, done) {

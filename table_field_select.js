@@ -34,12 +34,12 @@ angular.module('fireh_angular_table')
 
             // dropdownLabel, filterPlaceholder and label are observed in the
             // middle of this function
-            var filterName = $attrs.filterName;
-            var name = $attrs.name || $attrs.fhTableFieldSelect;
-            var pageSize = $attrs.size;
-            var orderBy = $attrs.orderBy;
-            var orderDir = $attrs.orderDir || 'asc';
-            var tableRow = $scope[$attrs.tableRow];
+            var filterName = $attrs.fhpFilterName;
+            var name = $attrs.fhpName || $attrs.fhTableFieldSelect;
+            var pageSize = $attrs.fhpSize;
+            var orderBy = $attrs.fhpOrderBy;
+            var orderDir = $attrs.fhpOrderDir || 'asc';
+            var tableRow = $scope[$attrs.fhpTableRow];
 
             TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
@@ -61,13 +61,13 @@ angular.module('fireh_angular_table')
             $scope.elementId = uniqId;
             $scope.elementCaptionId = uniqId + '-caption';
 
-            $attrs.$observe('filterPlaceholder', function(value) {
+            $attrs.$observe('fhpFilterPlaceholder', function(value) {
                 $scope.filterPlaceholder = value;
             });
-            $attrs.$observe('label', function(value) {
+            $attrs.$observe('fhpLabel', function(value) {
                 $scope.label = value;
             });
-            $attrs.$observe('dropdownLabel', function(value) {
+            $attrs.$observe('fhpDropdownLabel', function(value) {
                 $scope.caption = value;
             });
 
@@ -113,7 +113,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<button type="button" class="btn btn-default" ' +

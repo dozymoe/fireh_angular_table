@@ -17,7 +17,7 @@ angular.module('fireh_angular_table')
 
         myDirective.controller = function($scope, $element, $attrs) {
             // placeholder and label are observed in the middle of this function
-            var name = $attrs.name || $attrs.fhTableFilterText || '$';
+            var name = $attrs.fhpName || $attrs.fhTableFilterText || '$';
 
             TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
@@ -25,10 +25,10 @@ angular.module('fireh_angular_table')
             $scope.data = {value: ''};
             $scope.name = name;
 
-            $attrs.$observe('label', function(value) {
+            $attrs.$observe('fhpLabel', function(value) {
                 $scope.label = value;
             });
-            $attrs.$observe('placeholder', function(value) {
+            $attrs.$observe('fhpPlaceholder', function(value) {
                 $scope.placeholder = value;
             });
 
@@ -44,7 +44,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<div class="input-group fh-table-filter-text" ng-if="label"> ' +

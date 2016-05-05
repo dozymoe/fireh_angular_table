@@ -24,10 +24,10 @@ angular.module('fireh_angular_table')
         myDirective.controller = function($scope, $element, $attrs) {
             // dropdownLabel, filterPlaceholder and label are observed in the
             // middle of this function
-            var filterName = $attrs.filterName;
-            var pageSize = $attrs.size;
-            var orderBy = $attrs.orderBy;
-            var orderDir = $attrs.orderDir || 'asc';
+            var filterName = $attrs.fhpFilterName;
+            var pageSize = $attrs.fhpSize;
+            var orderBy = $attrs.fhpOrderBy;
+            var orderDir = $attrs.fhpOrderDir || 'asc';
 
             TableDefinitionMixin($scope, $attrs, 'fhFormFieldSelect');
             var params = $scope.params;
@@ -35,13 +35,13 @@ angular.module('fireh_angular_table')
             $scope.dropdownLabel = 'Select';
             $scope.filterName = filterName;
 
-            $attrs.$observe('dropdownLabel', function(value) {
+            $attrs.$observe('fhpDropdownLabel', function(value) {
                 $scope.dropdownLabel = value;
             });
-            $attrs.$observe('filterPlaceholder', function(value) {
+            $attrs.$observe('fhpFilterPlaceholder', function(value) {
                 $scope.filterPlaceholder = value;
             });
-            $attrs.$observe('label', function(value) {
+            $attrs.$observe('fhpLabel', function(value) {
                 $scope.label = value;
             });
 
@@ -56,7 +56,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<div class="dropdown fh-table-filter-select"> ' +

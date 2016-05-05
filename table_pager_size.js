@@ -16,8 +16,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            var pagerSize = $attrs.defaultPagerSize;
-            var pagerSizes = $attrs.pagerSizes;
+            var pagerSize = $attrs.fhpDefaultPagerSize;
+            var pagerSizes = $attrs.fhpPagerSizes;
 
             TableDefinitionMixin($scope, $attrs, 'fhTablePagerSize');
             var params = $scope.params;
@@ -46,7 +46,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<select data-ng-options="row for row in pageSizes track by row" ' +

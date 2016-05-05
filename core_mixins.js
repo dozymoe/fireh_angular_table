@@ -6,15 +6,15 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .factory('FhTableDefinitionMixin', ['$parse', function($parse) {
+    .factory('FhTableDefinitionMixin', function() {
         return function(scope, attrs, alternateAttrField) {
-            if (attrs.params) {
-                scope.params = $parse(attrs.params)(scope);
+            if (attrs.fhpParams) {
+                scope.params = scope[attrs.fhpParams];
             } else if (attrs[alternateAttrField]) {
-                scope.params = $parse(attrs[alternateAttrField])(scope);
+                scope.params = scope[attrs[alternateAttrField]];
             }
         }
-    }])
+    })
 
 
     .factory('FhTableListResourceControllerMixin', function() {

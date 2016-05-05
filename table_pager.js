@@ -16,7 +16,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            var pagerLinksCount = $attrs.pagerLinksCount;
+            var pagerLinksCount = $attrs.fhpPagerLinksCount;
 
             TableDefinitionMixin($scope, $attrs, 'fhTablePager');
             var params = $scope.params;
@@ -119,7 +119,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<ul data-ng-show="pager.isEnabled" class="pagination pagination-sm"> ' +

@@ -16,7 +16,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            var name = $attrs.name || $attrs.fhTableSorting;
+            var name = $attrs.fhpName || $attrs.fhTableSorting;
 
             TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
@@ -71,7 +71,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
-            var templateUrl = attrs.templateUrl;
+            var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
                 '<div class="dropdown fh-table-sorting"> ' +
