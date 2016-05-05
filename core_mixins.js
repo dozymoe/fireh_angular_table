@@ -17,10 +17,9 @@ angular.module('fireh_angular_table')
     })
 
 
-    .factory('FhTableListResourceControllerMixin', function() {
+    .factory('FhSelectedItemsMixin', function() {
         return function(scope, options) {
             var params = scope.params;
-            var initialFetchItems = true;
 
             options = _.merge(
                 {
@@ -28,9 +27,54 @@ angular.module('fireh_angular_table')
                 },
                 options || {});
 
+            scope.data.selectedItems = [];
+
+            params.on('itemSelected', function(event, item) {
+                var id = _.pick(item, params.items.identifierFields);
+                var index = _.findIndex(scope.data.selectedItems, id);
+                if (index !== -1) {
+                    scope.data.selectedItems[index] = item;
+                } else {
+                    if (!options.multipleSelection &&
+                            scope.data.selectedItems.length) {
+
+                        params.trigger('itemDeselected',
+                                scope.data.selectedItems[0]);
+                    }
+                    scope.data.selectedItems.push(item);
+                }
+            });
+
+            params.on('itemDeselected', function(event, item) {
+                var id = _.pick(item, params.items.identifierFields);
+                _.remove(scope.data.selectedItems, id);
+            });
+
+            params.on('itemDeleted', function(event, item) {
+                var id = _.pick(item, params.items.identifierFields);
+                _.remove(scope.data.selectedItems, id);
+            });
+
+            params.on('itemDataUpdated', function(event, newItem, oldItem) {
+                var id = _.pick(oldItem, params.items.identifierFields);
+                var index = _.findIndex(scope.data.selectedItems, id);
+                if (index !== -1) {
+                    scope.data.selectedItems[index] = newItem;
+                }
+            });
+        }
+    })
+
+
+    .factory('FhTableListResourceControllerMixin', function() {
+        return function(scope, options) {
+            var params = scope.params;
+            var initialFetchItems = true;
+
+            options = _.merge({}, options || {});
+
             scope.data = {
                 items: [],
-                selectedItems: [],
                 total: 0
             };
 
@@ -103,6 +147,11 @@ angular.module('fireh_angular_table')
                         };
                         params.trigger('itemsUpdated', updateNotifOptions);
                         params.trigger('itemsTotalUpdated', response.total);
+
+                        // update all local cache
+                        _.forEach(response.items, function(item) {
+                            params.trigger('itemDataUpdated', item, item);
+                        });
                     },
                     function (err) {
                         params.trigger('ajaxRequestFinished');
@@ -222,66 +271,29 @@ angular.module('fireh_angular_table')
             });
 
             params.on('selectItem', function(event, itemId) {
-                var item = _.find(scope.data.selectedItems, itemId);
-                if (!item) {
-                    item = _.find(scope.data.items, itemId);
-                    if (item) {
-                        if (!options.multipleSelection && scope.data.selectedItems.length) {
-                            params.trigger('itemDeselected', scope.data.selectedItems[0]);
-                            scope.data.selectedItems.splice(0);
-                        }
-                        scope.data.selectedItems.push(item);
-                    }
-                }
+                var item = _.find(scope.data.items, itemId);
                 if (item) {
                     params.trigger('itemSelected', item);
-                    params.trigger('itemsSelected', scope.data.selectedItems);
                 }
             });
 
             params.on('deselectItem', function(event, itemId) {
-                var items = _.remove(scope.data.selectedItems, itemId);
-                if (items.length === 0) {
-                    return;
+                var item = _.find(scope.data.items, itemId);
+                if (item) {
+                    params.trigger('itemDeselected', item);
                 }
-                for (var i = 0; i < items.length; i++) {
-                    params.trigger('itemDeselected', items[i]);
-                }
-                params.trigger('itemsSelected', scope.data.selectedItems);
             });
 
             params.on('selectAllItems', function() {
-                var id, item;
-                var changed = false;
-                for (var i = 0; i < scope.data.items.length; i++) {
-                    item = scope.data.items[i];
-                    id = _.pick(item, params.items.identifierFields);
-                    if (_.findIndex(scope.data.selectedItems, id) === -1) {
-                        scope.data.selectedItems.push(item);
-                        params.trigger('itemSelected', item);
-                        changed = true;
-                    }
-                }
-                if (changed) {
-                    params.trigger('itemsSelected', scope.data.selectedItems);
-                }
+                _.forEach(scope.data.items, function(item) {
+                    params.trigger('itemSelected', item);
+                });
             });
 
             params.on('deselectAllItems', function() {
-                var id, item, deletedItems;
-                var changed = false;
-                for (var i = 0; i < scope.data.items.length; i++) {
-                    item = scope.data.items[i];
-                    id = _.pick(item, params.items.identifierFields);
-                    deletedItems = _.remove(scope.data.selectedItems, id);
-                    for (var j = 0; j < deletedItems.length; j++) {
-                        params.trigger('itemDeselected', deletedItems[j]);
-                        changed = true;
-                    }
-                }
-                if (changed) {
-                    params.trigger('itemsSelected', scope.data.selectedItems);
-                }
+                _.forEach(scope.data.items, function(item) {
+                    params.trigger('itemDeselected', item);
+                });
             });
 
             params.on('itemAdded', function(event, item) {
@@ -292,17 +304,11 @@ angular.module('fireh_angular_table')
                 } else {
                     scope.data.items.push(item);
                 }
-
-                index = _.findIndex(scope.data.selectedItems, id);
-                if (index !== -1) {
-                    scope.data.selectedItems[index] = item;
-                }
             });
 
             params.on('itemDeleted', function(event, item) {
                 var id = _.pick(item, params.items.identifierFields);
                 _.remove(scope.data.items, id);
-                _.remove(scope.data.selectedItems, id);
             });
 
             params.on('itemDataUpdated', function(event, newItem, oldItem) {
@@ -310,11 +316,6 @@ angular.module('fireh_angular_table')
                 var index = _.findIndex(scope.data.items, id);
                 if (index !== -1) {
                     scope.data.items[index] = newItem;
-                }
-
-                index = _.findIndex(scope.data.selectedItems, id);
-                if (index !== -1) {
-                    scope.data.selectedItems[index] = newItem;
                 }
             });
         }

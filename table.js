@@ -7,8 +7,9 @@ if (window.require) {
 angular.module('fireh_angular_table')
 
     .directive('fhTable', ['$timeout', 'FhTableDefinitionMixin',
-            'FhTableListResourceControllerMixin',
-            function($timeout, TableDefinitionMixin, ListResourceControllerMixin) {
+            'FhTableListResourceControllerMixin', 'FhSelectedItemsMixin',
+            function($timeout, TableDefinitionMixin, ListResourceControllerMixin,
+            SelectedItemsMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -20,21 +21,27 @@ angular.module('fireh_angular_table')
             var params = $scope.params;
 
             ListResourceControllerMixin($scope);
+            SelectedItemsMixin($scope);
             _.merge($scope.data, {
                 editedItems: []
             });
 
-            $scope.selectAll = function selectAll(event) {
+            $scope.toggleSelectAll = function toggleSelectAll(event) {
                 var eventName = event.currentTarget.checked ? 'selectAllItems'
                         : 'deselectAllItems';
 
                 params.trigger(eventName);
             };
 
-            $scope.isAllSelected = function isAllSelected() {
-                return $scope.data.selectedItems.length ===
-                        $scope.data.items.length;
-            };
+            $scope.isAllSelected = false;
+            function _updateAllSelected() {
+                $scope.isAllSelected = $scope.data.selectedItems.length ===
+                        $scope.data.total;
+            }
+            params.on('itemSelected', _updateAllSelected);
+            params.on('itemDeselected', _updateAllSelected);
+            params.on('itemAdded', _updateAllSelected);
+            params.on('itemsTotalUpdated', _updateAllSelected);
         };
 
         myDirective.link = function link(scope) {

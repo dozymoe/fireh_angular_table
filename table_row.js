@@ -46,7 +46,7 @@ angular.module('fireh_angular_table')
                 params.trigger('updateItemData', scope.draft, scope.original);
             };
 
-            scope.select = function rowSelect(event) {
+            scope.toggleSelect = function toggleSelect(event) {
                 var eventName = event.currentTarget.checked ? 'selectItem'
                         : 'deselectItem';
 

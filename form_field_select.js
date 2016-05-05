@@ -9,11 +9,11 @@ angular.module('fireh_angular_table')
 
     .directive('fhFormFieldSelect', ['$compile', '$templateRequest',
             'FhTableDefinition', 'FhTableDefinitionMixin',
-            'FhTableListResourceControllerMixin',
+            'FhTableListResourceControllerMixin', 'FhSelectedItemsMixin',
             'FhTranscludeChildDirectiveMixin',
             function($compile, $templateRequest, TableDefinition,
             TableDefinitionMixin, ListResourceControllerMixin,
-            TranscludeChildDirectiveMixin) {
+            SelectedItemsMixin, TranscludeChildDirectiveMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -45,11 +45,8 @@ angular.module('fireh_angular_table')
                 $scope.label = value;
             });
 
-            ListResourceControllerMixin(
-                $scope,
-                {
-                    multipleSelection: false
-                });
+            ListResourceControllerMixin($scope);
+            SelectedItemsMixin($scope, {multipleSelection: false});
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }

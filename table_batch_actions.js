@@ -7,7 +7,8 @@ if (window.require) {
 angular.module('fireh_angular_table')
 
     .directive('fhTableBatchActions', ['FhTableDefinitionMixin',
-            function(TableDefinitionMixin) {
+            'FhSelectedItemsMixin',
+            function(TableDefinitionMixin, SelectedItemsMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -15,17 +16,28 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
-            TableDefinitionMixin(scope, attrs);
+            TableDefinitionMixin(scope, attrs, 'fhTableBatchActions');
             var params = scope.params;
 
-            scope.data.value = '';
+            scope.data = {
+                actionName: '',
+                total: 0
+            };
+
+            SelectedItemsMixin(scope);
 
             scope.execute = function batchExecute() {
                 if (scope.data.selectedItems) {
-                    params.trigger('batchAction', scope.data.value,
+                    params.trigger('batchAction', scope.data.actionName,
                             scope.data.selectedItems);
+
+                    scope.data.actionName = '';
                 }
             };
+
+            params.on('itemsTotalUpdated', function(event, totalItems) {
+                scope.data.total = totalItems;
+            });
         };
 
         return myDirective;
