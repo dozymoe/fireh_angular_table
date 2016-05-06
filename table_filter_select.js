@@ -29,6 +29,7 @@ angular.module('fireh_angular_table')
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
             var orderDir = $attrs.fhpOrderDir || 'asc';
+            var multipleSelection = $attrs.fhpSingleSelection === void(0);
 
             TableDefinitionMixin($scope, $attrs);
             var params = $scope.params;
@@ -56,7 +57,7 @@ angular.module('fireh_angular_table')
             });
 
             ListResourceControllerMixin($scope);
-            SelectedItemsMixin($scope);
+            SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
