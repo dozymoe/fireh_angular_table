@@ -140,7 +140,6 @@ angular.module('fireh_angular_table')
                             scope.dataParams.page = payload.page;
                         }
                         Array.prototype.push.apply(scope.data.items, response.items);
-                        scope.data.total = response.total;
 
                         var updateNotifOptions = {
                             hasNextItems: scope.data.items.length < response.total
@@ -157,6 +156,10 @@ angular.module('fireh_angular_table')
                         params.trigger('ajaxRequestFinished');
                     }
                 );
+            });
+
+            params.on('itemsTotalUpdated', function itemsTotalUpdated(event, totalItems) {
+                scope.data.total = totalItems;
             });
 
             params.on('resetItems', function resetItems() {
@@ -303,12 +306,17 @@ angular.module('fireh_angular_table')
                     scope.data.items[index] = item;
                 } else {
                     scope.data.items.push(item);
+                    params.trigger('itemsTotalUpdated', scope.data.total + 1);
                 }
             });
 
             params.on('itemDeleted', function(event, item) {
                 var id = _.pick(item, params.items.identifierFields);
-                _.remove(scope.data.items, id);
+                var items = _.remove(scope.data.items, id);
+                if (items.length) {
+                    var total = scope.data.total - items.length;
+                    params.trigger('itemsTotalUpdated', total < 0 ? 0 : total);
+                }
             });
 
             params.on('itemDataUpdated', function(event, newItem, oldItem) {
