@@ -2,7 +2,6 @@
 
 if (window.require) {
     require('./core_mixins');
-    require('./table_filter_text');
 }
 
 angular.module('fireh_angular_table')
@@ -22,9 +21,6 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            // filterPlaceholder and label are observed in the middle of this
-            // function
-            var filterName = $attrs.fhpFilterName;
             var name = $attrs.fhpName || $attrs.fhTableFilterSelect;
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
@@ -42,19 +38,7 @@ angular.module('fireh_angular_table')
             params = $scope.params = new TableDefinition(
                     tableParams.filterDefinition[name]);
 
-            $scope.dropdownLabel = 'Select';
-            $scope.filterName = filterName;
             $scope.name = name;
-
-            $attrs.$observe('fhpDropdownLabel', function(value) {
-                $scope.dropdownLabel = value;
-            });
-            $attrs.$observe('fhpFilterPlaceholder', function(value) {
-                $scope.filterPlaceholder = value;
-            });
-            $attrs.$observe('fhpLabel', function(value) {
-                $scope.label = value;
-            });
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
@@ -100,7 +84,8 @@ angular.module('fireh_angular_table')
                 '      data-toggle="dropdown" aria-haspopup="true" ' +
                 '      aria-expanded="false"> ' +
 
-                '    <span>{{ dropdownLabel }}</span> ' +
+                '    <span data-fh-transclude-pane="label"></span> ' +
+
                 '    <span ng-if="!data.selectedItems.length" ' +
                 '        class="fa fa-caret-down"></span> ' +
 
@@ -109,28 +94,15 @@ angular.module('fireh_angular_table')
 
                 '  </button> ' +
                 '  <div class="dropdown-menu" ' +
-                '      aria-labelledby="{{ elementId }}"> ' +
-
-                '    <div class="input-group fh-table-filter-text" ' +
-                '        data-ng-if="filterName" ' +
-                '        data-fh-table-filter-text ' +
-                '        data-name="{{ filterName }}" ' +
-                '        data-placeholder="{{ filterPlaceholder }}"></div> ' +
-
-                '    <div class="fh-table-filter-select-content"></div> ' +
-                '  </div> ' +
+                '      aria-labelledby="{{ elementId }}"
+                '      data-fh-transclude-pane="content"></div> ' +
                 '</div> ';
 
             function printHtml(htmlStr) {
                 // get directive content and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr);
-                    // buggy in jQuery2 :(
-                    //el.find('.fh-table-filter-select-content').append(clone);
-                    angular.element(el[0].querySelector(
-                            '.fh-table-filter-select-content')).append(clone);
-
-                    TranscludeChildDirectiveMixin(el);
+                    TranscludeChildDirectiveMixin(el, clone);
                     $compile(el.contents())(scope);
                 });
             }

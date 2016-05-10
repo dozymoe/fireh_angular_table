@@ -32,9 +32,6 @@ angular.module('fireh_angular_table')
              * first one, and selection-widget will refer to the second.
              */
 
-            // dropdownLabel, filterPlaceholder and label are observed in the
-            // middle of this function
-            var filterName = $attrs.fhpFilterName;
             var name = $attrs.fhpName || $attrs.fhTableFieldSelect;
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
@@ -53,24 +50,12 @@ angular.module('fireh_angular_table')
             params = $scope.params = new TableDefinition(
                     tableParams.fieldDefinition[name]);
 
-            $scope.caption = 'Select';
-            $scope.filterName = filterName;
             $scope.name = name;
             $scope.tableRow = tableRow;
 
             var uniqId = _.uniqueId('fh-table-field-select-' + name);
             $scope.elementId = uniqId;
             $scope.elementCaptionId = uniqId + '-caption';
-
-            $attrs.$observe('fhpFilterPlaceholder', function(value) {
-                $scope.filterPlaceholder = value;
-            });
-            $attrs.$observe('fhpLabel', function(value) {
-                $scope.label = value;
-            });
-            $attrs.$observe('fhpDropdownLabel', function(value) {
-                $scope.caption = value;
-            });
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
@@ -118,7 +103,8 @@ angular.module('fireh_angular_table')
                 '    ng-click="showModal()" ' +
                 '    id="{{ elementCaptionId }}"> ' +
 
-                '  <span>{{ caption }}</span> ' +
+                '  <span data-fh-transclude-pane="label"></span> ' +
+
                 '  <span ng-if="!data.selectedItems.length" ' +
                 '      class="fa fa-caret-down"></span> ' +
 
@@ -130,20 +116,15 @@ angular.module('fireh_angular_table')
                 '    id="{{ elementId }}" tabindex="-1" ' +
                 '    role="dialog" aria-labelledby="{{ elementCaptionId }}"> ' +
 
-                '  <div class="modal-body fh-table-field-select-content"> ' +
-                '  </div> ' +
+                '  <div class="modal-body"
+                '      data-fh-transclude-pane="content"></div> ' +
                 '</div>';
 
             function printHtml(htmlStr) {
                 // get directive cotnent and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr);
-                    // buggy in jQuery2 :(
-                    //el.find('.fh-table-field-select-content').append(clone);
-                    angular.element(el[0].querySelector(
-                            '.fh-table-field-select-content')).append(clone);
-
-                    TranscludeChildDirectiveMixin(el);
+                    TranscludeChildDirectiveMixin(el, clone);
                     $compile(el.contents())(scope);
                 });
             }

@@ -331,24 +331,57 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhTranscludeChildDirectiveMixin', function() {
-        /* Sub-directives inside directive with transclude will be initialized twice,
-         * something we do not wish to happen. So we need pseudo directive, an
-         * attribute (data-fh-transcluded) that parent directive will checked for
-         * real sub-directive name which is its value.
+        /* Sub-directives inside directive with transclude will be initialized
+         * twice, something we do not wish to happen. So we need pseudo
+         * directive, an attribute (data-fh-transcluded) that parent directive
+         * will checked for real sub-directive name which is its value.
          *
-         * The real sub-directive name will be added later by this mixin as attribute
-         * to the html element with attribute `data-fh-transcluded`.
+         * The real sub-directive name will be added later by this mixin as
+         * attribute to the html element with attribute `data-fh-transcluded`.
          *
          * The temporary attribute (data-fh-transcluded) will be removed.
          */
-        return function(el) {
-            var attribute_name = 'data-fh-transcluded';
+        return function(el, clone) {
+            var transcluded_directive_attrname = 'data-fh-transcluded';
+            var transcluded_pane_attrname = 'data-fh-transclude-pane';
 
+            // buggy in jQuery2 :(
             // angular jQLite's el.find() doesn't work
-            _.forEach(el[0].querySelectorAll('[' + attribute_name + ']'), function(eltr) {
+
+            //// data-fh-transclude-pane
+
+            var elpanes = {};
+            _.forEach(clone, function(elcl) {
+                if (elcl.hasAttribute(transcluded_pane_attrname)) {
+                    var name = elcl.getAttribute(transcluded_pane_attrname);
+                    elpanes[name] = elcl.children;
+                }
+            });
+            if (!elpanes) {
+                elpanes.content = clone;
+            }
+
+            //el.find('.fh-table-field-select-content').append(clone);
+            _.forEach(el[0].querySelector('[' + transcluded_pane_attrname +']'),
+                    function(elpane) {
+
+                var $el = angular.element(elpane);
+                var pane_name = $el.attr(transcluded_pane_attrname);
+                if (pane_name && elpanes[pane_name]) {
+                    $el.append(elpanes[pane_name]);
+                } else {
+                    $el.addClass('empty');
+                }
+            });
+
+            //// data-fh-transcluded
+
+            _.forEach(el[0].querySelectorAll('[' +
+                    transcluded_directive_attrname + ']'), function(eltr) {
+
                 var $el = angular.element(eltr);
-                $el.attr($el.attr(attribute_name), '');
-                $el.removeAttr(attribute_name);
+                $el.attr($el.attr(transcluded_directive_attrname), '');
+                $el.removeAttr(transcluded_directive_attrname);
             });
         }
     })
