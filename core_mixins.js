@@ -352,9 +352,11 @@ angular.module('fireh_angular_table')
 
             var elpanes = {};
             _.forEach(clone, function(elcl) {
-                if (elcl.hasAttribute(transcluded_pane_attrname)) {
+                if (elcl.hasAttribute && elcl.hasAttribute(
+                        transcluded_pane_attrname)) {
+
                     var name = elcl.getAttribute(transcluded_pane_attrname);
-                    elpanes[name] = elcl.children;
+                    elpanes[name] = elcl;
                 }
             });
             if (!elpanes) {
@@ -362,13 +364,13 @@ angular.module('fireh_angular_table')
             }
 
             //el.find('.fh-table-field-select-content').append(clone);
-            _.forEach(el[0].querySelector('[' + transcluded_pane_attrname +']'),
-                    function(elpane) {
+            _.forEach(el[0].querySelectorAll('[' +
+                    transcluded_pane_attrname +']'), function(elpane) {
 
                 var $el = angular.element(elpane);
                 var pane_name = $el.attr(transcluded_pane_attrname);
                 if (pane_name && elpanes[pane_name]) {
-                    $el.append(elpanes[pane_name]);
+                    $el.replaceWith(elpanes[pane_name]);
                 } else {
                     $el.addClass('empty');
                 }
@@ -382,6 +384,29 @@ angular.module('fireh_angular_table')
                 var $el = angular.element(eltr);
                 $el.attr($el.attr(transcluded_directive_attrname), '');
                 $el.removeAttr(transcluded_directive_attrname);
+            });
+        }
+    })
+
+
+    .factory('FhCustomEventHandlersMixin', function() {
+        return function(scope, attrs, events, params) {
+            if (params === void(0)) { params = scope.params }
+
+            _.forEach(events, function(callback, eventName) {
+                var attrName = 'fhe' + _.capitalize(eventName);
+                var options = {
+                    scope: scope,
+                    oldCallback: callback,
+                    params: params
+                };
+
+                if (attrs[attrName] && scope[attrs[attrName]]) {
+                    callback = scope[attrs[attrName]].bind(options);
+                } else if (params.eventHandlers[eventName]) {
+                    callback = params.eventHandlers[eventName].bind(options);
+                }
+                params.on(eventName, callback);
             });
         }
     })

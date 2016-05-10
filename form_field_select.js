@@ -57,8 +57,10 @@ angular.module('fireh_angular_table')
 
                 '  </button> ' +
                 '  <div class="dropdown-menu" ' +
-                '      aria-labelledby="{{ elementId }}" ' +
-                '      data-fh-transclude-pane="content"></div> ' +
+                '      aria-labelledby="{{ elementId }}"> ' +
+
+                '    <div data-fh-transclude-pane="content"></div> ' +
+                '  </div> ' +
                 '</div> ';
 
             function printHtml(htmlStr) {

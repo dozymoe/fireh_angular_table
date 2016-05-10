@@ -68,7 +68,7 @@ angular.module('fireh_angular_table')
             }
 
             $scope.showModal = function showModal() {
-                $element.find('#' + uniqId).modal('show');
+                jQuery(document.getElementById(uniqId)).modal('show');
             }
 
             params.on('ajaxRequestStarted', function() {
@@ -112,12 +112,17 @@ angular.module('fireh_angular_table')
                 '      class="fa fa-caret-square-o-down"></span> ' +
                 '</button> ' +
 
-                '<div class="modal fade fh-table-field-select" ' +
+                '<div class="modal fh-table-field-select" ' +
                 '    id="{{ elementId }}" tabindex="-1" ' +
                 '    role="dialog" aria-labelledby="{{ elementCaptionId }}"> ' +
 
-                '  <div class="modal-body"
-                '      data-fh-transclude-pane="content"></div> ' +
+                '  <div data-fh-transclude-pane="header" class="hidden"></div> ' +
+
+                '  <div class="modal-body"> ' +
+                '    <div data-fh-transclude-pane="content"></div> ' +
+                '  </div> ' +
+
+                '  <div data-fh-transclude-pane="footer" class="hidden"></div> ' +
                 '</div>';
 
             function printHtml(htmlStr) {

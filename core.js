@@ -6,6 +6,8 @@ angular.module('fireh_angular_table', [])
         var FhTableDefinition = function(settings) {
             // use angular.merge on newer version
             _.merge(this, {
+                eventHandlers: {},
+
                 fieldDefinition: {},
 
                 filter: {

@@ -7,7 +7,8 @@ if (window.require) {
 angular.module('fireh_angular_table')
 
     .directive('fhTableRow', ['FhTableDefinitionMixin',
-            function(TableDefinitionMixin) {
+            'FhCustomEventHandlersMixin', function(TableDefinitionMixin,
+            CustomEventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -15,10 +16,12 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.link = function(scope, el, attrs) {
+            var originalData = scope[attrs.fhTableRow || attrs.fhpRowItem];
+
             TableDefinitionMixin(scope, attrs);
             var params = scope.params;
 
-            scope.original = scope[attrs.fhTableRow || attrs.fhpRowItem];
+            scope.original = originalData;
             scope.draft = angular.copy(scope.original);
             scope.isEditing = false;
 
@@ -74,23 +77,6 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('draftSetField', function(event, item, fieldName, value) {
-                if (params.isItemsEqual(scope.original, item)) {
-                    scope.draft[fieldName] = value;
-                    params.trigger('draftUpdated', scope.draft);
-                }
-            });
-
-            params.on('draftUnsetField', function(event, item, fieldName, value) {
-                if (params.isItemsEqual(scope.original, item) &&
-                        params.isFieldsEqual(fieldName, scope.draft[fieldName],
-                        value)) {
-
-                    scope.draft[fieldName] = null;
-                    params.trigger('draftUpdated', scope.draft);
-                }
-            });
-
             params.on('itemDataUpdated', function(event, item) {
                 if (params.isItemsEqual(scope.original, item)) {
                     scope.original = angular.copy(item);
@@ -99,6 +85,34 @@ angular.module('fireh_angular_table')
 
             // update field selections and other field editing widgets
             params.trigger('draftUpdated', scope.draft);
+
+            //// event handlers that can be overridden by user
+
+            function _onDraftSetField(event, item, fieldName, value) {
+                if (params.isItemsEqual(scope.original, item)) {
+                    scope.draft[fieldName] = value;
+                    params.trigger('draftUpdated', scope.draft);
+                }
+            }
+
+            function _onDraftUnsetField(event, item, fieldName, value) {
+                if (params.isItemsEqual(scope.original, item) &&
+                        params.isFieldsEqual(fieldName, scope.draft[fieldName],
+                        value)) {
+
+                    scope.draft[fieldName] = null;
+                    params.trigger('draftUpdated', scope.draft);
+                }
+            }
+
+            CustomEventHandlersMixin(
+                scope,
+                attrs,
+                {
+                    draftSetField: _onDraftSetField,
+                    draftUnsetField: _onDraftUnsetField
+                },
+                params);
         };
 
         return myDirective;
