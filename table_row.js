@@ -53,6 +53,10 @@ angular.module('fireh_angular_table')
                 params.trigger(eventName, scope.original);
             };
 
+            scope.select = function select() {
+                scope.toggleSelect({currentTarget: {checked: true}});
+            };
+
             scope.isFieldModified = function isFieldModified(fieldName) {
                 return !params.isFieldsEqual(fieldName, scope.original[fieldName],
                         scope.draft[fieldName]);
