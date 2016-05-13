@@ -39,7 +39,7 @@ angular.module('fireh_angular_table')
             $scope.isEditing = false;
 
             $scope.isSelected = _.find($scope.data.selectedItems,
-                    params.getItemId($scope.original));
+                    params.getItemId(originalData));
 
             var formId = _.uniqueId('fh-table-form-');
 

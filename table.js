@@ -56,8 +56,11 @@ angular.module('fireh_angular_table')
             //// events
 
             function _updateAllSelected() {
-                $scope.isAllSelected = $scope.data.selectedItems.length ===
-                        $scope.data.total;
+                var diff = _.differenceBy($scope.data.items,
+                        $scope.data.selectedItems,
+                        params.items.identifierFields);
+
+                $scope.isAllSelected = diff.length === 0;
             }
 
             var displayEvents = {
