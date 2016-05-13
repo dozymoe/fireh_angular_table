@@ -6,9 +6,20 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableFilterText', ['$compile', '$templateRequest',
-            'FhTableDefinitionMixin',
-            function($compile, $templateRequest, TableDefinitionMixin) {
+    .directive('fhTableFilterText', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinitionMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinitionMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -16,34 +27,57 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
-            // placeholder and label are observed in the middle of this function
+            //// element attributes
+
             var name = $attrs.fhpName || $attrs.fhTableFilterText || '$';
 
+            $attrs.$observe('fhpLabel', function(value) {
+                $scope.label = value;
+            });
+
+            $attrs.$observe('fhpPlaceholder', function(value) {
+                $scope.placeholder = value;
+            });
+
             TableDefinitionMixin($scope, $attrs);
+
+            //// scope variables
+
             var params = $scope.params;
 
             $scope.data = {value: ''};
             $scope.name = name;
 
-            $attrs.$observe('fhpLabel', function(value) {
-                $scope.label = value;
-            });
-            $attrs.$observe('fhpPlaceholder', function(value) {
-                $scope.placeholder = value;
-            });
+            //// scope functions
 
             $scope.changeFilter = function changeFilter() {
                 params.trigger('setSingleValueFilter', name, $scope.data.value);
             };
 
-            params.on('filterUpdated', function(event, filterName, filterValue) {
-                if (filterName === name) {
-                    $scope.data.value = filterValue;
-                }
-            });
+            //// events
+
+            var displayEvents = {};
+
+            displayEvents.filterUpdated = function(event, filterName,
+                    filterValue) {
+
+                if (filterName === name) { $scope.data.value = filterValue }
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs) {
+            //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =

@@ -6,13 +6,28 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableFilterSelect', ['$compile', '$templateRequest',
-            'FhTableDefinition', 'FhTableDefinitionMixin',
-            'FhTableListResourceControllerMixin', 'FhSelectedItemsMixin',
-            'FhTranscludeChildDirectiveMixin',
-            function($compile, $templateRequest, TableDefinition,
-            TableDefinitionMixin, ListResourceControllerMixin,
-            SelectedItemsMixin, TranscludeChildDirectiveMixin) {
+    .directive('fhTableFilterSelect', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinition',
+        'FhTableDefinitionMixin',
+        'FhTableListResourceControllerMixin',
+        'FhSelectedItemsMixin',
+        'FhTranscludeChildDirectiveMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinition,
+            TableDefinitionMixin,
+            ListResourceControllerMixin,
+            SelectedItemsMixin,
+            TranscludeChildDirectiveMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -21,6 +36,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            //// element attributes
+
             var name = $attrs.fhpName || $attrs.fhTableFilterSelect;
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
@@ -28,6 +45,9 @@ angular.module('fireh_angular_table')
             var multipleSelection = $attrs.fhpSingleSelection === void(0);
 
             TableDefinitionMixin($scope, $attrs);
+
+            //// scope variables
+
             var params = $scope.params;
 
             // we are going to have our own data params, store table params in
@@ -46,6 +66,8 @@ angular.module('fireh_angular_table')
             if (pageSize) { $scope.dataParams.pageSize = pageSize }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
 
+            //// events
+
             params.on('ajaxRequestStarted', function() {
                 tableParams.trigger('ajaxRequestStarted');
             });
@@ -62,18 +84,32 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('itemSelected', function(event, item) {
+            var displayEvents = {};
+
+            displayEvents.itemSelected = function(event, item) {
                 tableParams.trigger('addMultipleValuesFilter', name,
                         _.pick(item, params.items.identifierFields));
-            });
+            };
 
-            params.on('itemDeselected', function(event, item) {
+            displayEvents.itemDeselected = function(event, item) {
                 tableParams.trigger('removeMultipleValuesFilter', name,
                         _.pick(item, params.items.identifierFields));
-            });
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
+            //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml = 

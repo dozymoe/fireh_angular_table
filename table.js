@@ -6,10 +6,22 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTable', ['$timeout', 'FhTableDefinitionMixin',
-            'FhTableListResourceControllerMixin', 'FhSelectedItemsMixin',
-            function($timeout, TableDefinitionMixin, ListResourceControllerMixin,
-            SelectedItemsMixin) {
+    .directive('fhTable', [
+        '$timeout',
+        'FhTableDefinitionMixin',
+        'FhTableListResourceControllerMixin',
+        'FhSelectedItemsMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $timeout,
+            TableDefinitionMixin,
+            ListResourceControllerMixin,
+            SelectedItemsMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -17,14 +29,22 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function controller($scope, $element, $attrs) {
+            //// element attributes
+
             TableDefinitionMixin($scope, $attrs, 'fhTable');
-            var params = $scope.params;
+
+            //// scope variables
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope);
             _.merge($scope.data, {
                 editedItems: []
             });
+
+            $scope.isAllSelected = false;
+            var params = $scope.params;
+
+            //// scope functions
 
             $scope.toggleSelectAll = function toggleSelectAll(event) {
                 var eventName = event.currentTarget.checked ? 'selectAllItems'
@@ -33,15 +53,29 @@ angular.module('fireh_angular_table')
                 params.trigger(eventName);
             };
 
-            $scope.isAllSelected = false;
+            //// events
+
             function _updateAllSelected() {
                 $scope.isAllSelected = $scope.data.selectedItems.length ===
                         $scope.data.total;
             }
-            params.on('itemSelected', _updateAllSelected);
-            params.on('itemDeselected', _updateAllSelected);
-            params.on('itemAdded', _updateAllSelected);
-            params.on('itemsTotalUpdated', _updateAllSelected);
+
+            var displayEvents = {
+                itemSelected: _updateAllSelected,
+                itemDeselected: _updateAllSelected,
+                itemAdded: _updateAllSelected,
+                itemsTotalUpdated: _updateAllSelected
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function link(scope) {

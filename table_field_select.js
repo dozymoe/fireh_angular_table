@@ -2,18 +2,32 @@
 
 if (window.require) {
     require('./core_mixins');
-    require('./table_filter_text');
 }
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableFieldSelect', ['$compile', '$templateRequest',
-            'FhTableDefinition', 'FhTableDefinitionMixin',
-            'FhTableListResourceControllerMixin', 'FhSelectedItemsMixin',
-            'FhTranscludeChildDirectiveMixin',
-            function($compile, $templateRequest, TableDefinition,
-            TableDefinitionMixin, ListResourceControllerMixin,
-            SelectedItemsMixin, TranscludeChildDirectiveMixin) {
+    .directive('fhTableFieldSelect', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinition',
+        'FhTableDefinitionMixin',
+        'FhTableListResourceControllerMixin',
+        'FhSelectedItemsMixin',
+        'FhTranscludeChildDirectiveMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinition,
+            TableDefinitionMixin,
+            ListResourceControllerMixin,
+            SelectedItemsMixin,
+            TranscludeChildDirectiveMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -32,6 +46,8 @@ angular.module('fireh_angular_table')
              * first one, and selection-widget will refer to the second.
              */
 
+            //// element attributes
+
             var name = $attrs.fhpName || $attrs.fhTableFieldSelect;
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
@@ -40,6 +56,9 @@ angular.module('fireh_angular_table')
             var tableRow = $scope[$attrs.fhpTableRow];
 
             TableDefinitionMixin($scope, $attrs);
+
+            //// scope variables
+
             var params = $scope.params;
 
             // we are going to have our own data params, store table params in
@@ -49,8 +68,8 @@ angular.module('fireh_angular_table')
             // our own data params
             params = $scope.params = new TableDefinition(
                     tableParams.fieldDefinition[name]);
+            if (!params.services) { params.services = tableParams.services }
 
-            $scope.name = name;
             $scope.tableRow = tableRow;
 
             var uniqId = _.uniqueId('fh-table-field-select-' + name);
@@ -67,9 +86,13 @@ angular.module('fireh_angular_table')
                 $scope.data.selectedItems = [tableRow[name]];
             }
 
+            //// scope functions
+
             $scope.showModal = function showModal() {
                 jQuery(document.getElementById(uniqId)).modal('show');
             }
+
+            //// events
 
             params.on('ajaxRequestStarted', function() {
                 tableParams.trigger('ajaxRequestStarted');
@@ -79,23 +102,38 @@ angular.module('fireh_angular_table')
                 tableParams.trigger('ajaxRequestFinished');
             });
 
-            params.on('selectItem', function(event, itemId) {
-                tableParams.trigger('draftSetField', tableRow, name,
-                        _.find($scope.data.items, itemId));
-            });
-
-            params.on('deselectItem', function(event, itemId) {
-                tableParams.trigger('draftUnsetField', tableRow, name, itemId);
-            });
-
-            tableParams.on('draftUpdated', function(event, item) {
+            tableParams.on('draftUpdated', function(event, item, options) {
                 if (tableParams.isItemsEqual(tableRow, item)) {
-                    params.trigger('itemSelected', item[name]);
+                    params.trigger('itemSelected', item[name], options);
                 }
             });
+
+            var actionEvents = {};
+
+            actionEvents.deselectItem = function(event, itemId, options) {
+                tableParams.trigger('draftUnsetField', tableRow, name,
+                        itemId, options);
+            };
+
+            actionEvents.selectItem = function(event, itemId, options) {
+                tableParams.trigger('draftSetField', tableRow, name,
+                        _.find($scope.data.items, itemId), options);
+            };
+
+            CustomEventHandlersMixin(actionEvents, $attrs, params);
+            MiddlewaresMixin(actionEvents, $attrs, params);
+
+            EventHandlersMixin(
+                actionEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
+            //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =

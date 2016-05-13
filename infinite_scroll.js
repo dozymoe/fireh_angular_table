@@ -2,36 +2,52 @@
 
 if (window.require) {
     require('jquery-infinite-scroll-helper');
-    require('./core');
+    require('./core_mixins');
 }
 
 angular.module('fireh_angular_table')
 
-    .directive('fhInfiniteScroll', ['$timeout', function($timeout) {
+    .directive('fhInfiniteScroll', [
+        '$timeout',
+        'FhTableDefinitionMixin',
+        function(
+            $timeout,
+            TableDefinitionMixin) {
+
         var myDirective = {
             restrict: 'A',
-            scope: false
+            scope: true
         };
 
-        myDirective.link = function(scope, el, attrs) {
+        myDirective.controller = function($scope, $element, $attrs) {
             var callback_completed_fn;
-            var callback_init;
-            var params = attrs.fhpParams || attrs.fhInfiniteScroll || scope.params;
 
-            if (attrs.fhpInitCallback && scope[attrs.fhpInitCallback]) {
-                callback_init = scope[attrs.fhpInitCallback];
-            }
+            //// element attributes
+
+            TableDefinitionMixin($scope, $attrs, 'fhInfiniteScroll');
+
+            //// scope variables
+
+            var params = $scope.params;
 
             function callback(page, done) {
                 callback_completed_fn = done;
                 params.trigger('fetchItems', {page: 'next'});
             }
 
-            var ish = new InfiniteScrollHelper(el, {
-                bottomBuffer: 200, // px
-                loadMore: callback,
-                triggerInitialLoad: false
-            });
+            var ish = new InfiniteScrollHelper(
+                $element,
+                {
+                    //bottomBuffer: 200, // px
+                    loadMore: callback,
+                    triggerInitialLoad: false
+                });
+
+            $scope._storage_ = {
+                infiniteScroll: ish
+            };
+
+            //// events
 
             function performIshAsyncComplete() {
                 if (callback_completed_fn) {
@@ -44,15 +60,22 @@ angular.module('fireh_angular_table')
                 performIshAsyncComplete();
                 if (options.hasNextItems) {
                     $timeout(function() {
-                        ish.$scrollContainer.trigger('scroll.infiniteScrollHelper');
+                        ish.$scrollContainer.trigger(
+                                'scroll.infiniteScrollHelper');
                     });
                 }
             });
-            params.on('itemsUpdateFailed', performIshAsyncComplete);
 
-            if (callback_init) {
-                callback_init(ish);
-            };
+            params.on('itemsUpdateFailed', performIshAsyncComplete);
+        };
+
+        myDirective.link = function(scope, el, attrs) {
+            //// element attributes
+
+            if (attrs.fhpInitCallback && scope[attrs.fhpInitCallback]) {
+                var callback_init = scope[attrs.fhpInitCallback];
+                callback_init(scope._storage_.infiniteScroll);
+            }
         };
 
         return myDirective;

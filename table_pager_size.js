@@ -6,9 +6,20 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTablePagerSize', ['$compile', '$templateRequest',
-            'FhTableDefinitionMixin',
-            function($compile, $templateRequest, TableDefinitionMixin) {
+    .directive('fhTablePagerSize', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinitionMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinitionMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -16,10 +27,15 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            //// element attributes
+
             var pagerSize = $attrs.fhpDefaultPagerSize;
             var pagerSizes = $attrs.fhpPagerSizes;
 
             TableDefinitionMixin($scope, $attrs, 'fhTablePagerSize');
+
+            //// scope variables
+
             var params = $scope.params;
 
             if (pagerSize) {
@@ -36,16 +52,36 @@ angular.module('fireh_angular_table')
             $scope.pageSize = pagerSize;
             $scope.pageSizes = pagerSizes;
 
+            //// scope functions
+
             $scope.select = function select() {
                 params.trigger('setPageSize', parseInt($scope.pageSize));
             };
 
-            params.on('pageSizeUpdated', function pageSizeUpdated(event, pageSize) {
+            //// events
+
+            var displayEvents = {};
+
+            displayEvents.pageSizeUpdated = function pageSizeUpdated(event,
+                        pageSize) {
+
                 $scope.pageSize = pageSize.toString();
-            });
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs) {
+            //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =

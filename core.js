@@ -23,8 +23,12 @@ angular.module('fireh_angular_table', [])
                     pageSize: 20
                 },
 
+                middlewares: [],
+
                 orderBy: [],
-                orderDefinition: {}
+                orderDefinition: {},
+
+                services: []
             });
             _.merge(this, settings);
 

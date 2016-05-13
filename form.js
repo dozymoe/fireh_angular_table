@@ -6,7 +6,7 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableRow', [
+    .directive('fhForm', [
         'FhTableDefinitionMixin',
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
@@ -25,10 +25,13 @@ angular.module('fireh_angular_table')
         myDirective.controller = function($scope, $element, $attrs) {
             //// element attributes
 
+            var name = $attrs.fhForm || $attrs.fhName;
+
             // required if you use middleware FhFormSessionStorage
             var dataType = $attrs.fhDataType;
 
-            var originalData = $scope[$attrs.fhTableRow || $attrs.fhpRowItem];
+            var originalData = $attrs.fhFormItem ? $scope[$attrs.fhFormItem]
+                    : null;
 
             TableDefinitionMixin($scope, $attrs);
 
@@ -36,41 +39,39 @@ angular.module('fireh_angular_table')
 
             var params = $scope.params;
 
-            $scope.isEditing = false;
+            $scope.original = {};
+            $scope.draft = {};
 
-            $scope.isSelected = _.find($scope.data.selectedItems,
-                    params.getItemId($scope.original));
-
-            var formId = _.uniqueId('fh-table-form-');
+            var isEditing = false;
 
             //// scope functions
 
-            $scope.cancel = function rowEditCancel() {
+            $scope.cancel = function formCancel() {
                 params.trigger(
                     'editingEnd',
                     $scope.draft,
                     $scope.original,
                     {
-                        formName: formId
+                        formName: name
                     });
             };
 
-            $scope.delete = function rowDelete() {
+            $scope.delete = function formDelete() {
                 params.trigger(
                     'deleteItem',
                     $scope.original,
                     {
-                        formName: formId
+                        formName: name
                     });
             };
 
-            $scope.edit = function rowEdit() {
+            $scope.edit = function formEdit() {
                 params.trigger(
                     'editingBegin',
                     $scope.draft,
                     $scope.original,
                     {
-                        formName: formId
+                        formName: name
                     });
             };
 
@@ -83,29 +84,18 @@ angular.module('fireh_angular_table')
                     });
             };
 
-            $scope.save = function rowSave() {
+            $scope.save = function formSave() {
                 params.trigger(
                     'updateItemData',
                     $scope.draft,
                     $scope.original,
                     {
-                        formName: formId
+                        formName: name
                     });
             };
 
-            $scope.toggleSelect = function toggleSelect(event) {
-                var eventName = event.currentTarget.checked ? 'selectItem'
-                        : 'deselectItem';
-
-                params.trigger(eventName, $scope.original);
-            };
-
-            $scope.select = function select() {
-                $scope.toggleSelect({currentTarget: {checked: true}});
-            };
-
             $scope.isFieldModified = function isFieldModified(fieldName) {
-                return !params.isFieldsEqual(fieldName,
+                return !params.isFieldEqual(fieldName,
                         $scope.original[fieldName], $scope.draft[fieldName]);
             };
 
@@ -133,26 +123,27 @@ angular.module('fireh_angular_table')
             }
 
             actionEvents.editingBegin = function(event, draft, item, options) {
-                if (options.formName === formId) { $scope.isEditing = true }
+                if (options.formName === name) { $scope.isEditing = true }
             };
 
             actionEvents.editingEnd = function(event, draft, item, options) {
-                if (options.formName === formId) { $scope.isEditing = false }
+                if (options.formName === name) { $scope.isEditing = false }
             };
 
             actionEvents.updateFormData = function(event, value, options) {
-                if (options.formName !== formId) { return }
+                if (options.formName !== name) { return }
                 $scope.original = value;
                 $scope.draft = _.cloneDeep(value);
                 params.trigger('formDataUpdated', value, options);
                 params.trigger('draftUpdated', $scope.draft, options);
+                params.trigger('editingBegin', $scope.draft, value, options);
             };
 
             var displayEvents = {};
 
             displayEvents.itemAdded = function(event, item, draft, options) {
                 if (!params.isItemsEqual($scope.draft, draft)) { return }
-                if (options && options.formName === formId) {
+                if (options && options.formName === name) {
                     params.trigger('editingEnd', draft, item, options);
                     params.trigger('resetDraft', draft, options);
                 }
@@ -161,9 +152,9 @@ angular.module('fireh_angular_table')
             displayEvents.itemDataUpdated = function(event, newItem, oldItem, options) {
                 if (!params.isItemsEqual($scope.original, oldItem)) { return }
                 $scope.original = newItem;
-                if (options && options.formName === formId) {
+                if (options && options.formName === name) {
                     params.trigger('editingEnd', newItem, oldItem, options);
-                    params.trigger('resetDraft', oldItem, options);
+                    params.trigger('resetDraft', newItem, options);
                 }
             };
 
@@ -173,16 +164,6 @@ angular.module('fireh_angular_table')
 
                 params.trigger('editingEnd', item, item, options);
                 params.trigger('resetDraft', item, options);
-            };
-
-            displayEvents.itemDeselected = function(event, item) {
-                if (!params.isItemsEqual($scope.original, item)) { return }
-                $scope.isSelected = false;
-            };
-
-            displayEvents.itemSelected = function(event, item) {
-                if (!params.isItemsEqual($scope.original, item)) { return }
-                $scope.isSelected = true;
             };
 
             CustomEventHandlersMixin(actionEvents, $attrs, params);
@@ -198,12 +179,14 @@ angular.module('fireh_angular_table')
                     dataType: dataType
                 });
 
-            params.trigger(
-                'updateFormData',
-                originalData,
-                {
-                    formName: formId
-                });
+            if (originalData) {
+                params.trigger(
+                    'updateFormData',
+                    originalData,
+                    {
+                        formName: name
+                    });
+            }
         };
 
         return myDirective;

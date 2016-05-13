@@ -6,9 +6,20 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTablePager', ['$compile', '$templateRequest',
-            'FhTableDefinitionMixin',
-            function($compile, $templateRequest, TableDefinitionMixin) {
+    .directive('fhTablePager', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinitionMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinitionMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -16,9 +27,14 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            //// element attributes
+
             var pagerLinksCount = $attrs.fhpPagerLinksCount;
 
             TableDefinitionMixin($scope, $attrs, 'fhTablePager');
+
+            //// scope variables
+
             var params = $scope.params;
 
             $scope.pager = {
@@ -95,50 +111,81 @@ angular.module('fireh_angular_table')
                 }
             }
 
+            //// scope functions
+
             $scope.select = function select(pageOffset) {
                 params.trigger('setPageOffset', pageOffset);
             };
 
-            params.on('pageOffsetUpdated', function(event, pageOffset) {
+
+            //// events
+
+            var displayEvents = {};
+
+            displayEvents.pageOffsetUpdated = function(event, pageOffset) {
                 if ($scope.pager.pageOffset === pageOffset) { return; }
                 $scope.pager.pageOffset = pageOffset;
                 calculate();
-            });
+            };
 
-            params.on('pageSizeUpdated', function(event, pageSize) {
+            displayEvents.pageSizeUpdated = function(event, pageSize) {
                 if ($scope.pager.pageSize === pageSize) { return; }
                 $scope.pager.pageSize = pageSize;
                 calculate();
-            });
+            };
 
-            params.on('itemsTotalUpdated', function(event, totalItems) {
+            displayEvents.itemsTotalUpdated = function(event, totalItems) {
                 if ($scope.pager.itemsTotal === totalItems) { return; }
                 $scope.pager.itemsTotal = totalItems;
                 calculate();
-            });
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs) {
+            //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
-                '<ul data-ng-show="pager.isEnabled" class="pagination pagination-sm"> ' +
-                '  <li data-ng-class="{\'disabled\': !pager.isFirstLinkEnabled}"> ' +
+                '<ul data-ng-show="pager.isEnabled" ' +
+                '    class="pagination pagination-sm"> ' +
+
+                '  <li data-ng-class="{ ' +
+                       '\'disabled\': !pager.isFirstLinkEnabled }"> ' +
+
                 '    <a ng-click="select(pager.firstLinkOffset)">First</a> ' +
                 '  </li> ' +
-                '  <li data-ng-class="{\'disabled\': !pager.isPrevLinkEnabled}"> ' +
+                '  <li data-ng-class="{ ' +
+                       '\'disabled\': !pager.isPrevLinkEnabled }"> ' +
+
                 '    <a ng-click="select(pager.prevLinkOffset)">Previous</a> ' +
                 '  </li> ' +
-                '  <li ng-repeat="row in pager.links" ' +
-                '      data-ng-class="{\'active\': row.pageOffset === pager.pageOffset,' +
-                '          \'disabled\': !row.isEnabled}"> ' +
+                '  <li ng-repeat="row in pager.links" data-ng-class="{ ' +
+                       '\'active\': row.pageOffset === pager.pageOffset, ' +
+                       '\'disabled\': !row.isEnabled }"> ' +
 
-                '    <a ng-click="select(row.pageOffset)">{{row.pageOffset}}</a> ' +
+                '    <a ng-click="select(row.pageOffset)"> ' +
+                '      {{row.pageOffset}} ' +
+                '    </a> ' +
                 '  </li> ' +
-                '  <li data-ng-class="{\'disabled\': !pager.isNextLinkEnabled}"> ' +
+                '  <li data-ng-class="{ ' +
+                       '\'disabled\': !pager.isNextLinkEnabled }"> ' +
+
                 '    <a ng-click="select(pager.nextLinkOffset)">Next</a> ' +
                 '  </li> ' +
-                '  <li data-ng-class="{\'disabled\': !pager.isLastLinkEnabled}"> ' +
+                '  <li data-ng-class="{ ' +
+                       '\'disabled\': !pager.isLastLinkEnabled }"> ' +
+
                 '    <a ng-click="select(pager.lastLinkOffset)">Last</a> ' +
                 '  </li> ' +
                 '</ul>';

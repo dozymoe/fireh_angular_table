@@ -6,37 +6,48 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableBatchActions', ['FhTableDefinitionMixin',
-            'FhSelectedItemsMixin',
-            function(TableDefinitionMixin, SelectedItemsMixin) {
+    .directive('fhTableBatchActions', [
+        'FhTableDefinitionMixin',
+        'FhSelectedItemsMixin',
+        function(
+            TableDefinitionMixin,
+            SelectedItemsMixin) {
 
         var myDirective = {
             restrict: 'A',
             scope: true
         };
 
-        myDirective.link = function(scope, el, attrs) {
-            TableDefinitionMixin(scope, attrs, 'fhTableBatchActions');
-            var params = scope.params;
+        myDirective.controller = function($scope, $element, $attrs) {
+            //// element attributes
 
-            scope.data = {
+            TableDefinitionMixin($scope, $attrs, 'fhTableBatchActions');
+
+            //// scope variables
+
+            $scope.data = {
                 actionName: '',
                 total: 0
             };
+            SelectedItemsMixin($scope);
 
-            SelectedItemsMixin(scope);
+            var params = $scope.params;
 
-            scope.execute = function batchExecute() {
-                if (scope.data.selectedItems) {
-                    params.trigger('batchAction', scope.data.actionName,
-                            scope.data.selectedItems);
+            //// scope functions
 
-                    scope.data.actionName = '';
+            $scope.execute = function batchExecute() {
+                if ($scope.data.selectedItems) {
+                    params.trigger('batchAction', $scope.data.actionName,
+                            $scope.data.selectedItems);
+
+                    $scope.data.actionName = '';
                 }
             };
 
+            //// events
+
             params.on('itemsTotalUpdated', function(event, totalItems) {
-                scope.data.total = totalItems;
+                $scope.data.total = totalItems;
             });
         };
 

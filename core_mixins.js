@@ -125,7 +125,9 @@ angular.module('fireh_angular_table')
 
                 params.trigger('ajaxRequestStarted');
 
-                var resourceGetter = params.items.getter(params.createQueryPayload(payload));
+                var resourceGetter = params.items.getter(
+                        params.createQueryPayload(payload));
+
                 if (resourceGetter.$promise) {
                     resourceGetter = resourceGetter.$promise;
                 }
@@ -139,10 +141,12 @@ angular.module('fireh_angular_table')
                         if (options.page) {
                             scope.dataParams.page = payload.page;
                         }
-                        Array.prototype.push.apply(scope.data.items, response.items);
+                        Array.prototype.push.apply(scope.data.items,
+                                response.items);
 
                         var updateNotifOptions = {
-                            hasNextItems: scope.data.items.length < response.total
+                            hasNextItems: scope.data.items.length <
+                                    response.total
                         };
                         params.trigger('itemsUpdated', updateNotifOptions);
                         params.trigger('itemsTotalUpdated', response.total);
@@ -158,7 +162,9 @@ angular.module('fireh_angular_table')
                 );
             });
 
-            params.on('itemsTotalUpdated', function itemsTotalUpdated(event, totalItems) {
+            params.on('itemsTotalUpdated', function itemsTotalUpdated(event,
+                    totalItems) {
+
                 scope.data.total = totalItems;
             });
 
@@ -166,7 +172,9 @@ angular.module('fireh_angular_table')
                 params.trigger('fetchItems', {flush: true, page: 1});
             });
 
-            params.on('addMultipleValuesFilter', function(event, filterName, filterValue) {
+            params.on('addMultipleValuesFilter', function(event, filterName,
+                    filterValue) {
+
                 var filters = scope.dataParams.filterBy;
                 var filter = filters[filterName];
 
@@ -189,7 +197,9 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('removeMultipleValuesFilter', function(event, filterName, filterValue) {
+            params.on('removeMultipleValuesFilter', function(event, filterName,
+                    filterValue) {
+
                 var filters = scope.dataParams.filterBy;
                 var filter = filters[filterName];
 
@@ -208,7 +218,9 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('setSingleValueFilter', function(event, filterName, filterValue) {
+            params.on('setSingleValueFilter', function(event, filterName,
+                    filterValue) {
+
                 scope.dataParams.filterBy[filterName]  = filterValue;
                 params.trigger('filterUpdated', filterName, filterValue);
                 params.trigger('resetItems');
@@ -216,25 +228,39 @@ angular.module('fireh_angular_table')
 
             params.on('setOrder', function(event, sortingName, sortingValue) {
                 var list = scope.dataParams.orderBy;
-                var priority = _.findIndex(list, function(item) { return item[0] === sortingName }) + 1;
+                var priority = _.findIndex(
+                    list,
+                    function(item) {
+                        return item[0] === sortingName
+                    }) + 1;
 
                 if (priority) {
                     if (sortingValue) {
                         var changed = false;
                         var sorting = list[priority - 1];
 
-                        if (sortingValue.direction && sortingValue.direction !== sorting[1]) {
+                        if (sortingValue.direction &&
+                                sortingValue.direction !== sorting[1]) {
+
                             sorting[1] = sortingValue.direction;
                             changed = true;
                         }
-                        if (sortingValue.priority && sortingValue.priority !== priority) {
+                        if (sortingValue.priority &&
+                                sortingValue.priority !== priority) {
+
                             list.splice(priority -1, 1);
                             priority = sortingValue.priority;
                             list.splice(priority - 1, 0, sorting);
                             changed = true;
                         }
                         if (changed) {
-                            params.trigger('orderUpdated', sortingName, {direction: sorting[1], priority: priority});
+                            params.trigger(
+                                'orderUpdated',
+                                sortingName,
+                                {
+                                    direction: sorting[1],
+                                    priority: priority
+                                });
                         } else {
                             return;
                         }
@@ -246,7 +272,13 @@ angular.module('fireh_angular_table')
                     var direction = sortingValue.direction || 'asc';
                     list.push([sortingName, direction]);
                     priority = sortingValue.priority || list.length;
-                    params.trigger('orderUpdated', sortingName, {direction: direction, priority: priority});
+                    params.trigger(
+                        'orderUpdated',
+                        sortingName,
+                        {
+                            direction: direction,
+                            priority: priority
+                        });
                 } else {
                     return;
                 }
@@ -254,7 +286,13 @@ angular.module('fireh_angular_table')
                 // trigger orderUpdated to update other sortings
                 _.forOwn(list, function(value, key) {
                     if (value[0] !== sortingName) {
-                        params.trigger('orderUpdated', value[0], {direction: value[1], priority: parseInt(key) + 1});
+                        params.trigger(
+                            'orderUpdated',
+                            value[0],
+                            {
+                                direction: value[1],
+                                priority: parseInt(key) + 1
+                            });
                     }
                 });
 
@@ -273,29 +311,29 @@ angular.module('fireh_angular_table')
                 params.trigger('resetItems');
             });
 
-            params.on('selectItem', function(event, itemId) {
+            params.on('selectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
-                    params.trigger('itemSelected', item);
+                    params.trigger('itemSelected', item, options);
                 }
             });
 
-            params.on('deselectItem', function(event, itemId) {
+            params.on('deselectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
-                    params.trigger('itemDeselected', item);
+                    params.trigger('itemDeselected', item, options);
                 }
             });
 
-            params.on('selectAllItems', function() {
+            params.on('selectAllItems', function(event, options) {
                 _.forEach(scope.data.items, function(item) {
-                    params.trigger('itemSelected', item);
+                    params.trigger('itemSelected', item, options);
                 });
             });
 
-            params.on('deselectAllItems', function() {
+            params.on('deselectAllItems', function(event, options) {
                 _.forEach(scope.data.items, function(item) {
-                    params.trigger('itemDeselected', item);
+                    params.trigger('itemDeselected', item, options);
                 });
             });
 
@@ -390,23 +428,66 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhCustomEventHandlersMixin', function() {
-        return function(scope, attrs, events, params) {
-            if (params === void(0)) { params = scope.params }
-
-            _.forEach(events, function(callback, eventName) {
+        return function(eventHandlers, attrs, params) {
+            _.forEach(eventHandlers, function(callback, eventName) {
+                var callbackArray = _.castArray(callback);
                 var attrName = 'fhe' + _.capitalize(eventName);
-                var options = {
-                    scope: scope,
-                    oldCallback: callback,
-                    params: params
-                };
-
                 if (attrs[attrName] && scope[attrs[attrName]]) {
-                    callback = scope[attrs[attrName]].bind(options);
+                    callbackArray.push(scope[attrs[attrName]]);
                 } else if (params.eventHandlers[eventName]) {
-                    callback = params.eventHandlers[eventName].bind(options);
+                    callbackArray.push(params.eventHandlers[eventName]);
                 }
-                params.on(eventName, callback);
+                eventHandlers[eventName] = callbackArray;
+            });
+        }
+    })
+
+
+    .factory('FhMiddlewaresMixin', function() {
+        return function(eventHandlers, attrs, params, reversed) {
+            var middlewares;
+            if (attrs.fheMiddlewares) {
+                middlewares = _.transform(
+                    attrs.fheMiddlewares.split(','),
+                    function(result, value) { result.push(value.trim()) },
+                    []);
+            } else {
+                middlewares = params.middlewares;
+            }
+            if (reversed) { _.reverse(middlewares) }
+
+            _.forEach(eventHandlers, function(callback, eventName) {
+                var callbackArray = _.castArray(callback);
+
+                _.forEach(middlewares, function(middlewareName) {
+                    var middleware = params.services[middlewareName];
+                    if (!middleware || !middleware.getEventHandlers) { return }
+                    var mEventHandlers = middleware.getEventHandlers();
+                    if (!mEventHandlers[eventName]) { return }
+                    callbackArray.push(mEventHandlers[eventName]);
+                });
+
+                eventHandlers[eventName] = callbackArray;
+            });
+        }
+    })
+
+
+    .factory('FhEventHandlersMixin', function() {
+        return function(eventHandlers, options) {
+            var scope = options.scope;
+            if (options.params === void(0)) { options.params = scope.params }
+            var params = options.params;
+
+            _.forEach(eventHandlers, function(callback, eventName) {
+                var callbackArray = _.castArray(callback);
+                var lastCallback;
+                _.forEach(callbackArray, function(callback) {
+                    var callbackOptions = _.clone(options);
+                    callbackOptions.oldCallback = lastCallback;
+                    lastCallback = callback.bind(callbackOptions);
+                });
+                params.on(eventName, lastCallback);
             });
         }
     })

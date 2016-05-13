@@ -6,9 +6,20 @@ if (window.require) {
 
 angular.module('fireh_angular_table')
 
-    .directive('fhTableSorting', ['$compile', '$templateRequest',
-            'FhTableDefinitionMixin',
-            function($compile, $templateRequest, TableDefinitionMixin) {
+    .directive('fhTableSorting', [
+        '$compile',
+        '$templateRequest',
+        'FhTableDefinitionMixin',
+        'FhCustomEventHandlersMixin',
+        'FhMiddlewaresMixin',
+        'FhEventHandlersMixin',
+        function(
+            $compile,
+            $templateRequest,
+            TableDefinitionMixin,
+            CustomEventHandlersMixin,
+            MiddlewaresMixin,
+            EventHandlersMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -16,13 +27,18 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            //// element attributes
             var name = $attrs.fhpName || $attrs.fhTableSorting;
 
             TableDefinitionMixin($scope, $attrs);
+
+            //// scope variables
             var params = $scope.params;
 
             $scope.priority = 0;
             $scope.direction = null;
+
+            //// scope functions
 
             $scope.sortAsc = function tableSortAscending(event) {
                 event.preventDefault();
@@ -55,8 +71,12 @@ angular.module('fireh_angular_table')
                 }
             };
 
-            params.on('orderUpdated', function orderUpdated(event, sortingName,
-                        sortingValue) {
+            //// events
+
+            var displayEvents = {};
+
+            displayEvents.orderUpdated = function orderUpdated(event,
+                    sortingName, sortingValue) {
 
                 if (sortingName !== name) {
                     return;
@@ -67,10 +87,21 @@ angular.module('fireh_angular_table')
                     $scope.direction = null;
                     $scope.priority = 0;
                 }
-            });
+            };
+
+            CustomEventHandlersMixin(displayEvents, $attrs, params);
+            MiddlewaresMixin(displayEvents, $attrs, params, true);
+
+            EventHandlersMixin(
+                displayEvents,
+                {
+                    scope: $scope,
+                    params: params,
+                });
         };
 
         myDirective.link = function(scope, el, attrs) {
+            //// element attributes
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
