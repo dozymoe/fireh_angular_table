@@ -19,26 +19,27 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            $scope.data = {
+                actionName: '',
+                total: 0
+            };
+
             //// element attributes
 
             TableDefinitionMixin($scope, $attrs, 'fhTableBatchActions');
 
             //// scope variables
 
-            $scope.data = {
-                actionName: '',
-                total: 0
-            };
             SelectedItemsMixin($scope);
 
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
             //// scope functions
 
             $scope.execute = function batchExecute() {
                 if ($scope.data.selectedItems) {
-                    params.trigger('batchAction', $scope.data.actionName,
-                            $scope.data.selectedItems);
+                    fhtable.trigger('batchAction', $scope.data.actionName,
+                            $scope.data.selectedItems, eventOptions);
 
                     $scope.data.actionName = '';
                 }
@@ -46,7 +47,7 @@ angular.module('fireh_angular_table')
 
             //// events
 
-            params.on('itemsTotalUpdated', function(event, totalItems) {
+            fhtable.on('itemsTotalUpdated', function(event, totalItems) {
                 $scope.data.total = totalItems;
             });
         };

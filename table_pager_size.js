@@ -10,16 +10,20 @@ angular.module('fireh_angular_table')
         '$compile',
         '$templateRequest',
         'FhTableDefinitionMixin',
+        'FhTranscludeChildElementsMixin',
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
         'FhEventHandlersMixin',
+        'FhElementIdMixin',
         function(
             $compile,
             $templateRequest,
             TableDefinitionMixin,
+            TranscludeChildElementsMixin,
             CustomEventHandlersMixin,
             MiddlewaresMixin,
-            EventHandlersMixin) {
+            EventHandlersMixin,
+            ElementIdMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -31,51 +35,63 @@ angular.module('fireh_angular_table')
 
             var pagerSize = $attrs.fhpDefaultPagerSize;
             var pagerSizes = $attrs.fhpPagerSizes;
+            var elementId = ElementIdMixin($attrs, 'fh-table-pager-size-');
 
             TableDefinitionMixin($scope, $attrs, 'fhTablePagerSize');
 
             //// scope variables
 
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
-            if (pagerSize) {
-                pagerSize = pagerSize.trim();
-                params.trigger('setPageSize', parseInt(pagerSize));
-            }
-
+            if (pagerSize) { pagerSize = parseInt(pagerSize.trim()) }
             if (pagerSizes) {
-                pagerSizes = pagerSizes.trim().split(/\s*,\s*/)
+                pagerSizes = _.transform(
+                    pagerSizes.trim().split(/\s*,\s*/),
+                    function(result, value) { result.push(parseInt(value)) },
+                    []);
             } else {
                 pagerSizes = [5, 10, 20, 50, 100];
             }
 
-            $scope.pageSize = pagerSize;
+            $scope.pageSize = pagerSize || fhtable.items.pageSize;
             $scope.pageSizes = pagerSizes;
+            $scope.elementId = elementId;
 
             //// scope functions
 
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
+
             $scope.select = function select() {
-                params.trigger('setPageSize', parseInt($scope.pageSize));
+                fhtable.trigger('setPageSize', $scope.pageSize,
+                        getEventOptions());
             };
+
+            if (pagerSize) { $scope.select() }
 
             //// events
 
             var displayEvents = {};
 
             displayEvents.pageSizeUpdated = function pageSizeUpdated(event,
-                        pageSize) {
+                    pageSize) {
 
-                $scope.pageSize = pageSize.toString();
+                $scope.pageSize = pageSize;
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 
@@ -85,13 +101,22 @@ angular.module('fireh_angular_table')
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
-                '<select data-ng-options="row for row in pageSizes track by row" ' +
+                '<div data-fh-transclude-pane="header"></div> ' +
+
+                '<select id="{{ elementId }}" ' +
+                '  data-ng-options="row for row in pageSizes track by row" ' +
                 '  data-ng-model="pageSize" ' +
-                '  data-ng-change="select()"></select>';
+                '  data-ng-change="select()"></select> ' +
+
+                '<div data-fh-transclude-pane="footer"></div>';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr);
-                $compile(el.contents())(scope);
+                // get directive content and insert into template
+                transclude(scope, function(clone, scope) {
+                    el.html(htmlStr);
+                    TranscludeChildElementsMixin(el, clone);
+                    $compile(el.contents())(scope);
+                });
             }
 
             if (templateUrl) {

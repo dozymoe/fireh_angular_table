@@ -29,28 +29,34 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function controller($scope, $element, $attrs) {
+            $scope.data = {};
+
             //// element attributes
 
             TableDefinitionMixin($scope, $attrs, 'fhTable');
 
             //// scope variables
 
+            $scope.isAllSelected = false;
+
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope);
-            _.merge($scope.data, {
-                editedItems: []
-            });
 
-            $scope.isAllSelected = false;
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
             //// scope functions
+
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+            }
 
             $scope.toggleSelectAll = function toggleSelectAll(event) {
                 var eventName = event.currentTarget.checked ? 'selectAllItems'
                         : 'deselectAllItems';
 
-                params.trigger(eventName);
+                fhtable.trigger(eventName, getEventOptions());
             };
 
             //// events
@@ -58,7 +64,7 @@ angular.module('fireh_angular_table')
             function _updateAllSelected() {
                 var diff = _.differenceBy($scope.data.items,
                         $scope.data.selectedItems,
-                        params.items.identifierFields);
+                        fhtable.items.identifierFields);
 
                 $scope.isAllSelected = diff.length === 0;
             }
@@ -70,14 +76,15 @@ angular.module('fireh_angular_table')
                 itemsTotalUpdated: _updateAllSelected
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 
@@ -86,23 +93,25 @@ angular.module('fireh_angular_table')
             $timeout(function() {
                 // trigger filterUpdated to initialize all filters
                 _.forOwn(scope.dataParams.filterBy, function(value, key) {
-                    scope.params.trigger('filterUpdated', key, value);
+                    scope.fhtable.trigger('filterUpdated', key, value);
                 });
 
                 // trigger orderUpdated to initialize all sortings
                 _.forOwn(scope.dataParams.orderBy, function(value, key) {
-                    scope.params.trigger('orderUpdated', value[0], {
+                    scope.fhtable.trigger('orderUpdated', value[0], {
                             direction: value[1], priority: parseInt(key) + 1});
                 });
 
                 // trigger pageOffsetUpdated to initialize pager widgets
-                scope.params.trigger('pageOffsetUpdated', scope.dataParams.page);
+                scope.fhtable.trigger('pageOffsetUpdated',
+                        scope.dataParams.page);
 
                 // trigger pageSizeUpdated to initialize pager widgets
-                scope.params.trigger('pageSizeUpdated', scope.dataParams.pageSize);
+                scope.fhtable.trigger('pageSizeUpdated',
+                        scope.dataParams.pageSize);
             });
 
-            scope.params.trigger('fetchItems', {initialFetchItems: true});
+            scope.fhtable.trigger('fetchItems', {initialFetchItems: true});
         };
 
         return myDirective;

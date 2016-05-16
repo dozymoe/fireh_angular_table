@@ -2,38 +2,44 @@
 
 angular.module('fireh_angular_table', [])
 
-    .factory('FhTableDefinition', ['$rootScope', function($rootScope) {
+    .factory('FhTableDefinition', [
+        '$rootScope',
+        function(
+            $rootScope) {
+
         var FhTableDefinition = function(settings) {
-            // use angular.merge on newer version
-            _.merge(this, {
-                eventHandlers: {},
+            _.merge(
+                this,
+                {
+                    eventHandlers: {},
 
-                fieldDefinition: {},
+                    fieldDefinition: {},
 
-                filter: {
-                    throttle: 500
-                },
-                filterBy: {},
-                filterDefinition: {},
+                    filter: {
+                        throttle: 500
+                    },
+                    filterBy: {},
+                    filterDefinition: {},
 
-                items: {
-                    getter: null,
-                    //identifierFields: 'id', // will be used with _.pick()
-                    page: 1,
-                    pageSize: 20
-                },
+                    items: {
+                        getter: null,
+                        //identifierFields: 'id', // will be used with _.pick()
+                        page: 1,
+                        pageSize: 20
+                    },
 
-                middlewares: [],
+                    middlewares: [],
 
-                orderBy: [],
-                orderDefinition: {},
+                    orderBy: [],
+                    orderDefinition: {},
 
-                services: []
-            });
-            _.merge(this, settings);
+                    services: []
+                });
+            _.mergeDeep(this, settings);
 
             if (console.assert) {
-                console.assert(this.items.identifierFields !== void(0), "FhTableDefinition: identifierFields is required.");
+                console.assert(this.items.identifierFields !== void(0),
+                        "FhTableDefinition: identifierFields is required.");
             }
 
             var scope = this.scope = $rootScope.$new();
@@ -46,24 +52,32 @@ angular.module('fireh_angular_table', [])
                 // ES5 convert arguments into array, see http://stackoverflow.com/a/960870
                 var args = Array.prototype.slice.call(arguments);
                 scope.$broadcast.apply(scope, args);
-            }
+            };
 
             this.createQueryPayload = function createQueryPayload(data) {
                 // remove empty filters, save into pairs
-                var cleanedFilter = _.transform(data.filterBy, function(result, value, key) {
-                    if (!value) { return; }
-                    // if it's an array of objects with one property, convert into array of the property values,
-                    // for example [{id: 1}, {id: 2}] into [1, 2]
-                    if (_.isArray(value)) {
-                        value = _.transform(value, function(result, value) {
-                            if (_.isObject(value) && _.keys(value).length == 1) {
-                                value = _.values(value)[0];
-                            }
-                            result.push(value);
-                        })
-                    }
-                    result.push([key, value]);
-                }, []);
+                var cleanedFilter = _.transform(
+                    data.filterBy,
+                    function(result, value, key) {
+                        if (!value) { return; }
+                        // if it's an array of objects with one property,
+                        // convert into array of the property values,
+                        // for example [{id: 1}, {id: 2}] into [1, 2]
+                        if (_.isArray(value)) {
+                            value = _.transform(
+                                value,
+                                function(result, value) {
+                                    if (_.isObject(value) &&
+                                            _.keys(value).length == 1) {
+
+                                        value = _.values(value)[0];
+                                    }
+                                    result.push(value);
+                                });
+                        }
+                        result.push([key, value]);
+                    },
+                    []);
                 // sort filter by name, save into object
                 var sortedFilter = _.sortBy(cleanedFilter, 0);
                 if (_.fromPairs) {
@@ -124,7 +138,9 @@ angular.module('fireh_angular_table', [])
                 }
             };
 
-            this.isFieldsEqual = function isFieldsEqual(fieldName, item1, item2) {
+            this.isFieldsEqual = function isFieldsEqual(fieldName, item1,
+                    item2) {
+
                 return _.isEqual(this.getFieldId(fieldName, item1),
                         this.getFieldId(fieldName, item2));
             };
@@ -135,6 +151,20 @@ angular.module('fireh_angular_table', [])
 
             this.isItemsEqual = function isItemsEqual(item1, item2) {
                 return _.isEqual(this.getItemId(item1), this.getItemId(item2));
+            };
+
+            this.identifierAsString = function identifierAsString(item,
+                    options) {
+
+                if (options === void(0)) { options = {} }
+                var keyValueSeparator = options.keyValueSeparator || '=';
+                var keysSeparator = options.keysSeparator || ';';
+
+                var id = _.pick(item, this.items.identifierFields);
+                var resultArray = _.transform(id, function(result, value, key) {
+                    result.push(key + keyValueSeparator + value);
+                }, []);
+                return resultArray.join(keysSeparator);
             };
 
             return this;

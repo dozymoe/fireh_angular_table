@@ -28,11 +28,11 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
             function callback(page, done) {
                 callback_completed_fn = done;
-                params.trigger('fetchItems', {page: 'next'});
+                fhtable.trigger('fetchItems', {page: 'next'});
             }
 
             var ish = new InfiniteScrollHelper(
@@ -56,7 +56,7 @@ angular.module('fireh_angular_table')
                 }
             }
 
-            params.on('itemsUpdated', function(event, options) {
+            fhtable.on('itemsUpdated', function(event, options) {
                 performIshAsyncComplete();
                 if (options.hasNextItems) {
                     $timeout(function() {
@@ -66,7 +66,7 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('itemsUpdateFailed', performIshAsyncComplete);
+            fhtable.on('itemsUpdateFailed', performIshAsyncComplete);
         };
 
         myDirective.link = function(scope, el, attrs) {

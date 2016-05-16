@@ -8,10 +8,10 @@ angular.module('fireh_angular_table')
 
     .factory('FhTableDefinitionMixin', function() {
         return function(scope, attrs, alternateAttrField) {
-            if (attrs.fhpParams) {
-                scope.params = scope[attrs.fhpParams];
+            if (attrs.fhpTable) {
+                scope.fhtable = scope[attrs.fhpTable];
             } else if (attrs[alternateAttrField]) {
-                scope.params = scope[attrs[alternateAttrField]];
+                scope.fhtable = scope[attrs[alternateAttrField]];
             }
         }
     })
@@ -19,7 +19,7 @@ angular.module('fireh_angular_table')
 
     .factory('FhSelectedItemsMixin', function() {
         return function(scope, options) {
-            var params = scope.params;
+            var fhtable = scope.fhtable;
 
             options = _.merge(
                 {
@@ -29,8 +29,8 @@ angular.module('fireh_angular_table')
 
             scope.data.selectedItems = [];
 
-            params.on('itemSelected', function(event, item) {
-                var id = _.pick(item, params.items.identifierFields);
+            fhtable.on('itemSelected', function(event, item, options) {
+                var id = _.pick(item, fhtable.items.identifierFields);
                 var index = _.findIndex(scope.data.selectedItems, id);
                 if (index !== -1) {
                     scope.data.selectedItems[index] = item;
@@ -38,25 +38,27 @@ angular.module('fireh_angular_table')
                     if (!options.multipleSelection &&
                             scope.data.selectedItems.length) {
 
-                        params.trigger('itemDeselected',
-                                scope.data.selectedItems[0]);
+                        fhtable.trigger('itemDeselected',
+                                scope.data.selectedItems[0], options);
                     }
                     scope.data.selectedItems.push(item);
                 }
             });
 
-            params.on('itemDeselected', function(event, item) {
-                var id = _.pick(item, params.items.identifierFields);
+            fhtable.on('itemDeselected', function(event, item, options) {
+                var id = _.pick(item, fhtable.items.identifierFields);
                 _.remove(scope.data.selectedItems, id);
             });
 
-            params.on('itemDeleted', function(event, item) {
-                var id = _.pick(item, params.items.identifierFields);
+            fhtable.on('itemDeleted', function(event, item, options) {
+                var id = _.pick(item, fhtable.items.identifierFields);
                 _.remove(scope.data.selectedItems, id);
             });
 
-            params.on('itemDataUpdated', function(event, newItem, oldItem) {
-                var id = _.pick(oldItem, params.items.identifierFields);
+            fhtable.on('itemDataUpdated', function(event, newItem, oldItem,
+                    options) {
+
+                var id = _.pick(oldItem, fhtable.items.identifierFields);
                 var index = _.findIndex(scope.data.selectedItems, id);
                 if (index !== -1) {
                     scope.data.selectedItems[index] = newItem;
@@ -68,36 +70,34 @@ angular.module('fireh_angular_table')
 
     .factory('FhTableListResourceControllerMixin', function() {
         return function(scope, options) {
-            var params = scope.params;
+            var fhtable = scope.fhtable;
             var initialFetchItems = true;
 
             options = _.merge({}, options || {});
 
-            scope.data = {
-                items: [],
-                total: 0
-            };
+            scope.data.items = [];
+            scope.data.total = 0;
 
             scope.dataParams = {
-                filterBy: params.filterBy,
-                orderBy: params.orderBy,
-                page: params.items.page,
-                pageSize: params.items.pageSize
+                filterBy: fhtable.filterBy,
+                orderBy: fhtable.orderBy,
+                page: fhtable.items.page,
+                pageSize: fhtable.items.pageSize
             };
 
             scope.isLoading = 0;
 
-            params.on('ajaxRequestStarted', function incrIsLoading() {
+            fhtable.on('ajaxRequestStarted', function incrIsLoading() {
                 scope.isLoading += 1;
             });
 
-            params.on('ajaxRequestFinished', function decrIsLoading() {
+            fhtable.on('ajaxRequestFinished', function decrIsLoading() {
                 if (scope.isLoading > 0) {
                     scope.isLoading -= 1;
                 }
             });
 
-            params.on('fetchItems', function fetchItems(event, options) {
+            fhtable.on('fetchItems', function fetchItems(event, options) {
                 // initializing table and widgets, delay all item fetches until
                 // we are ready
                 if (initialFetchItems) {
@@ -123,17 +123,17 @@ angular.module('fireh_angular_table')
                     payload.page = parseInt(options.page);
                 }
 
-                params.trigger('ajaxRequestStarted');
+                fhtable.trigger('ajaxRequestStarted');
 
-                var resourceGetter = params.items.getter(
-                        params.createQueryPayload(payload));
+                var resourceGetter = fhtable.items.getter(
+                        fhtable.createQueryPayload(payload));
 
                 if (resourceGetter.$promise) {
                     resourceGetter = resourceGetter.$promise;
                 }
                 resourceGetter.then(
                     function (response) {
-                        params.trigger('ajaxRequestFinished');
+                        fhtable.trigger('ajaxRequestFinished');
 
                         if (options.flush) {
                             scope.data.items = [];
@@ -148,31 +148,31 @@ angular.module('fireh_angular_table')
                             hasNextItems: scope.data.items.length <
                                     response.total
                         };
-                        params.trigger('itemsUpdated', updateNotifOptions);
-                        params.trigger('itemsTotalUpdated', response.total);
+                        fhtable.trigger('itemsUpdated', updateNotifOptions);
+                        fhtable.trigger('itemsTotalUpdated', response.total);
 
                         // update all local cache
                         _.forEach(response.items, function(item) {
-                            params.trigger('itemDataUpdated', item, item);
+                            fhtable.trigger('itemDataUpdated', item, item, {});
                         });
                     },
                     function (err) {
-                        params.trigger('ajaxRequestFinished');
+                        fhtable.trigger('ajaxRequestFinished');
                     }
                 );
             });
 
-            params.on('itemsTotalUpdated', function itemsTotalUpdated(event,
+            fhtable.on('itemsTotalUpdated', function itemsTotalUpdated(event,
                     totalItems) {
 
                 scope.data.total = totalItems;
             });
 
-            params.on('resetItems', function resetItems() {
-                params.trigger('fetchItems', {flush: true, page: 1});
+            fhtable.on('resetItems', function resetItems() {
+                fhtable.trigger('fetchItems', {flush: true, page: 1});
             });
 
-            params.on('addMultipleValuesFilter', function(event, filterName,
+            fhtable.on('addMultipleValuesFilter', function(event, filterName,
                     filterValue) {
 
                 var filters = scope.dataParams.filterBy;
@@ -181,8 +181,8 @@ angular.module('fireh_angular_table')
                 function updateFilter(value) {
                     // save value into $scope.dataParams
                     filters[filterName] = value;
-                    params.trigger('filterUpdated', filterName, value);
-                    params.trigger('resetItems');
+                    fhtable.trigger('filterUpdated', filterName, value);
+                    fhtable.trigger('resetItems');
                 }
 
                 if (filter) {
@@ -197,7 +197,7 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('removeMultipleValuesFilter', function(event, filterName,
+            fhtable.on('removeMultipleValuesFilter', function(event, filterName,
                     filterValue) {
 
                 var filters = scope.dataParams.filterBy;
@@ -206,8 +206,8 @@ angular.module('fireh_angular_table')
                 function updateFilter(value) {
                     // save value into $scope.dataParams
                     filters[filterName] = value;
-                    params.trigger('filterUpdated', filterName, value);
-                    params.trigger('resetItems');
+                    fhtable.trigger('filterUpdated', filterName, value);
+                    fhtable.trigger('resetItems');
                 }
 
                 if (filter) {
@@ -218,15 +218,15 @@ angular.module('fireh_angular_table')
                 }
             });
 
-            params.on('setSingleValueFilter', function(event, filterName,
+            fhtable.on('setSingleValueFilter', function(event, filterName,
                     filterValue) {
 
                 scope.dataParams.filterBy[filterName]  = filterValue;
-                params.trigger('filterUpdated', filterName, filterValue);
-                params.trigger('resetItems');
+                fhtable.trigger('filterUpdated', filterName, filterValue);
+                fhtable.trigger('resetItems');
             });
 
-            params.on('setOrder', function(event, sortingName, sortingValue) {
+            fhtable.on('setOrder', function(event, sortingName, sortingValue) {
                 var list = scope.dataParams.orderBy;
                 var priority = _.findIndex(
                     list,
@@ -254,7 +254,7 @@ angular.module('fireh_angular_table')
                             changed = true;
                         }
                         if (changed) {
-                            params.trigger(
+                            fhtable.trigger(
                                 'orderUpdated',
                                 sortingName,
                                 {
@@ -266,13 +266,13 @@ angular.module('fireh_angular_table')
                         }
                     } else {
                         list.splice(priority -1, 1);
-                        params.trigger('orderUpdated', sortingName, null);
+                        fhtable.trigger('orderUpdated', sortingName, null);
                     }
                 } else if (sortingValue) {
                     var direction = sortingValue.direction || 'asc';
                     list.push([sortingName, direction]);
                     priority = sortingValue.priority || list.length;
-                    params.trigger(
+                    fhtable.trigger(
                         'orderUpdated',
                         sortingName,
                         {
@@ -286,7 +286,7 @@ angular.module('fireh_angular_table')
                 // trigger orderUpdated to update other sortings
                 _.forOwn(list, function(value, key) {
                     if (value[0] !== sortingName) {
-                        params.trigger(
+                        fhtable.trigger(
                             'orderUpdated',
                             value[0],
                             {
@@ -296,69 +296,71 @@ angular.module('fireh_angular_table')
                     }
                 });
 
-                params.trigger('resetItems');
+                fhtable.trigger('resetItems');
             });
 
-            params.on('setPageOffset', function(event, pageOffset) {
+            fhtable.on('setPageOffset', function(event, pageOffset) {
                 scope.dataParams.page = pageOffset;
-                params.trigger('pageOffsetUpdated', pageOffset);
-                params.trigger('fetchItems', {flush: true, page: pageOffset});
+                fhtable.trigger('pageOffsetUpdated', pageOffset);
+                fhtable.trigger('fetchItems', {flush: true, page: pageOffset});
             });
 
-            params.on('setPageSize', function(event, pageSize) {
+            fhtable.on('setPageSize', function(event, pageSize) {
                 scope.dataParams.pageSize = pageSize;
-                params.trigger('pageSizeUpdated', pageSize);
-                params.trigger('resetItems');
+                fhtable.trigger('pageSizeUpdated', pageSize);
+                fhtable.trigger('resetItems');
             });
 
-            params.on('selectItem', function(event, itemId, options) {
+            fhtable.on('selectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
-                    params.trigger('itemSelected', item, options);
+                    fhtable.trigger('itemSelected', item, options);
                 }
             });
 
-            params.on('deselectItem', function(event, itemId, options) {
+            fhtable.on('deselectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
-                    params.trigger('itemDeselected', item, options);
+                    fhtable.trigger('itemDeselected', item, options);
                 }
             });
 
-            params.on('selectAllItems', function(event, options) {
+            fhtable.on('selectAllItems', function(event, options) {
                 _.forEach(scope.data.items, function(item) {
-                    params.trigger('itemSelected', item, options);
+                    fhtable.trigger('itemSelected', item, options);
                 });
             });
 
-            params.on('deselectAllItems', function(event, options) {
+            fhtable.on('deselectAllItems', function(event, options) {
                 _.forEach(scope.data.items, function(item) {
-                    params.trigger('itemDeselected', item, options);
+                    fhtable.trigger('itemDeselected', item, options);
                 });
             });
 
-            params.on('itemAdded', function(event, item) {
-                var id = _.pick(item, params.items.identifierFields);
+            fhtable.on('itemAdded', function(event, newItem, oldItem, options) {
+                var id = _.pick(newItem, fhtable.items.identifierFields);
                 var index = _.findIndex(scope.data.items, id);
                 if (index !== -1) {
-                    scope.data.items[index] = item;
+                    scope.data.items[index] = newItem;
                 } else {
-                    scope.data.items.push(item);
-                    params.trigger('itemsTotalUpdated', scope.data.total + 1);
+                    scope.data.items.push(newItem);
+                    fhtable.trigger('itemsTotalUpdated', scope.data.total + 1);
                 }
             });
 
-            params.on('itemDeleted', function(event, item) {
-                var id = _.pick(item, params.items.identifierFields);
+            fhtable.on('itemDeleted', function(event, item, options) {
+                var id = _.pick(item, fhtable.items.identifierFields);
                 var items = _.remove(scope.data.items, id);
                 if (items.length) {
                     var total = scope.data.total - items.length;
-                    params.trigger('itemsTotalUpdated', total < 0 ? 0 : total);
+                    fhtable.trigger('itemsTotalUpdated', total < 0 ? 0 : total);
                 }
             });
 
-            params.on('itemDataUpdated', function(event, newItem, oldItem) {
-                var id = _.pick(oldItem, params.items.identifierFields);
+            fhtable.on('itemDataUpdated', function(event, newItem, oldItem,
+                    options) {
+
+                var id = _.pick(oldItem, fhtable.items.identifierFields);
                 var index = _.findIndex(scope.data.items, id);
                 if (index !== -1) {
                     scope.data.items[index] = newItem;
@@ -368,7 +370,7 @@ angular.module('fireh_angular_table')
     })
 
 
-    .factory('FhTranscludeChildDirectiveMixin', function() {
+    .factory('FhTranscludeChildElementsMixin', function() {
         /* Sub-directives inside directive with transclude will be initialized
          * twice, something we do not wish to happen. So we need pseudo
          * directive, an attribute (data-fh-transcluded) that parent directive
@@ -380,11 +382,10 @@ angular.module('fireh_angular_table')
          * The temporary attribute (data-fh-transcluded) will be removed.
          */
         return function(el, clone) {
-            var transcluded_directive_attrname = 'data-fh-transcluded';
             var transcluded_pane_attrname = 'data-fh-transclude-pane';
-
-            // buggy in jQuery2 :(
-            // angular jQLite's el.find() doesn't work
+            var transcluded_directive_attrname = 'data-fh-transcluded';
+            var transcluded_directive_value_attrname =
+                    'data-fh-transcluded-value';
 
             //// data-fh-transclude-pane
 
@@ -401,7 +402,6 @@ angular.module('fireh_angular_table')
                 elpanes.content = clone;
             }
 
-            //el.find('.fh-table-field-select-content').append(clone);
             _.forEach(el[0].querySelectorAll('[' +
                     transcluded_pane_attrname +']'), function(elpane) {
 
@@ -410,7 +410,7 @@ angular.module('fireh_angular_table')
                 if (pane_name && elpanes[pane_name]) {
                     $el.replaceWith(elpanes[pane_name]);
                 } else {
-                    $el.addClass('empty');
+                    $el.remove();
                 }
             });
 
@@ -420,7 +420,8 @@ angular.module('fireh_angular_table')
                     transcluded_directive_attrname + ']'), function(eltr) {
 
                 var $el = angular.element(eltr);
-                $el.attr($el.attr(transcluded_directive_attrname), '');
+                $el.attr($el.attr(transcluded_directive_attrname),
+                        $el.attr(transcluded_directive_value_attrname));
                 $el.removeAttr(transcluded_directive_attrname);
             });
         }
@@ -428,14 +429,14 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhCustomEventHandlersMixin', function() {
-        return function(eventHandlers, attrs, params) {
+        return function(eventHandlers, attrs, fhtable) {
             _.forEach(eventHandlers, function(callback, eventName) {
                 var callbackArray = _.castArray(callback);
                 var attrName = 'fhe' + _.capitalize(eventName);
                 if (attrs[attrName] && scope[attrs[attrName]]) {
                     callbackArray.push(scope[attrs[attrName]]);
-                } else if (params.eventHandlers[eventName]) {
-                    callbackArray.push(params.eventHandlers[eventName]);
+                } else if (fhtable.eventHandlers[eventName]) {
+                    callbackArray.push(fhtable.eventHandlers[eventName]);
                 }
                 eventHandlers[eventName] = callbackArray;
             });
@@ -444,23 +445,27 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhMiddlewaresMixin', function() {
-        return function(eventHandlers, attrs, params, reversed) {
-            var middlewares;
+        return function(eventHandlers, attrs, fhtable, reversed) {
+            var middlewares, forLoop;
             if (attrs.fheMiddlewares) {
                 middlewares = _.transform(
                     attrs.fheMiddlewares.split(','),
                     function(result, value) { result.push(value.trim()) },
                     []);
             } else {
-                middlewares = params.middlewares;
+                middlewares = fhtable.middlewares;
             }
-            if (reversed) { _.reverse(middlewares) }
+            if (reversed) {
+                forLoop = _.forEachRight;
+            } else {
+                forLoop = _.forEach;
+            }
 
-            _.forEach(eventHandlers, function(callback, eventName) {
+            forLoop(eventHandlers, function(callback, eventName) {
                 var callbackArray = _.castArray(callback);
 
                 _.forEach(middlewares, function(middlewareName) {
-                    var middleware = params.services[middlewareName];
+                    var middleware = fhtable.services[middlewareName];
                     if (!middleware || !middleware.getEventHandlers) { return }
                     var mEventHandlers = middleware.getEventHandlers();
                     if (!mEventHandlers[eventName]) { return }
@@ -476,19 +481,58 @@ angular.module('fireh_angular_table')
     .factory('FhEventHandlersMixin', function() {
         return function(eventHandlers, options) {
             var scope = options.scope;
-            if (options.params === void(0)) { options.params = scope.params }
-            var params = options.params;
+            if (options.fhtable === void(0)) { options.fhtable = scope.fhtable }
+            var fhtable = options.fhtable;
 
             _.forEach(eventHandlers, function(callback, eventName) {
                 var callbackArray = _.castArray(callback);
                 var lastCallback;
                 _.forEach(callbackArray, function(callback) {
                     var callbackOptions = _.clone(options);
-                    callbackOptions.oldCallback = lastCallback;
+                    callbackOptions.nextCallback = lastCallback;
                     lastCallback = callback.bind(callbackOptions);
                 });
-                params.on(eventName, lastCallback);
+                fhtable.on(eventName, lastCallback);
             });
+        }
+    })
+
+
+    .factory('FhFormIdMixin', function() {
+        return function(scope, attrs, item, create, name) {
+            function generateFormId(name) {
+                if (item !== void(0)) {
+                    // dynamic form-id based on identifier-fields
+                    var id = scope.fhtable.identifierAsString(item);
+                    return formName + id;
+                else {
+                    // this will create totally random form-id which is
+                    // impossible to cache (for example, in SessionStorage)
+                    //
+                    // last resort of a unique id for throw away forms
+                    return _.uniqueId(formName);
+                }
+            }
+
+            if (attrs.fhpFormId) {
+                scope.formId = attrs.fhpFormId;
+            } else if (attrs.fhpFormName) {
+                scope.formId = generateFormId(attrs.fhpFormName);
+            } else if (create) {
+                scope.formId = generateFormId(name || 'fh-form-');
+            }
+
+            return scope.formId;
+        }
+    })
+
+
+    .factory('FhElementIdMixin', function() {
+        return function(attrs, name) {
+            if (attrs.fhpElementId) {
+                return attrs.fhpElementId;
+            }
+            return _.uniqueId(attrs.fhpElementName || name || 'fh-widget-');
         }
     })
 ;

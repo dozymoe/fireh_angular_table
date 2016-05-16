@@ -13,10 +13,11 @@ angular.module('fireh_angular_table')
         'FhTableDefinitionMixin',
         'FhTableListResourceControllerMixin',
         'FhSelectedItemsMixin',
-        'FhTranscludeChildDirectiveMixin',
+        'FhTranscludeChildElementsMixin',
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
         'FhEventHandlersMixin',
+        'FhElementIdMixin',
         function(
             $compile,
             $templateRequest,
@@ -24,10 +25,11 @@ angular.module('fireh_angular_table')
             TableDefinitionMixin,
             ListResourceControllerMixin,
             SelectedItemsMixin,
-            TranscludeChildDirectiveMixin,
+            TranscludeChildElementsMixin,
             CustomEventHandlersMixin,
             MiddlewaresMixin,
-            EventHandlersMixin) {
+            EventHandlersMixin,
+            ElementIdMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -36,6 +38,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            $scope.data = {};
+
             //// element attributes
 
             var name = $attrs.fhpName || $attrs.fhTableFilterSelect;
@@ -43,67 +47,76 @@ angular.module('fireh_angular_table')
             var orderBy = $attrs.fhpOrderBy;
             var orderDir = $attrs.fhpOrderDir || 'asc';
             var multipleSelection = $attrs.fhpSingleSelection === void(0);
+            var elementId = ElementIdMixin(attrs, 'fh-table-filter-select-');
 
             TableDefinitionMixin($scope, $attrs);
 
             //// scope variables
 
-            var params = $scope.params;
-
-            // we are going to have our own data params, store table params in
+            // we are going to have our own fhtable, store parent fhtable in
             // different variable
-            var tableParams = $scope.tableParams = params;
+            var parentFhtable = $scope.parentFhtable = $scope.fhtable;
 
-            // our own data params
-            params = $scope.params = new TableDefinition(
-                    tableParams.filterDefinition[name]);
-
-            $scope.name = name;
+            // our own fhtable
+            var fhtable = $scope.fhtable = new TableDefinition(
+                    parentFhtable.filterDefinition[name]);
+            if (!fhtable.services) { fhtable.services = parentFhtable.services }
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
+
+            $scope.name = name;
+            $scope.elementId = elementId;
+            $scope.popupElementId = elementId + '-popup';
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
 
             //// events
 
-            params.on('ajaxRequestStarted', function() {
-                tableParams.trigger('ajaxRequestStarted');
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
+
+            fhtable.on('ajaxRequestStarted', function() {
+                parentFhtable.trigger('ajaxRequestStarted');
             });
 
-            params.on('ajaxRequestFinished', function() {
-                tableParams.trigger('ajaxRequestFinished');
+            fhtable.on('ajaxRequestFinished', function() {
+                parentFhtable.trigger('ajaxRequestFinished');
             });
 
-            tableParams.on('filterUpdated', function(event, filterName,
+            parentFhtable.on('filterUpdated', function(event, filterName,
                         filterValue) {
 
-                if (filterName === name) {
-                    $scope.data.value = filterValue;
-                }
+                if (filterName !== name) { return }
+                $scope.data.value = filterValue;
             });
 
             var displayEvents = {};
 
             displayEvents.itemSelected = function(event, item) {
-                tableParams.trigger('addMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFields));
+                parentFhtable.trigger('addMultipleValuesFilter', name, item,
+                        getEventOptions());
             };
 
             displayEvents.itemDeselected = function(event, item) {
-                tableParams.trigger('removeMultipleValuesFilter', name,
-                        _.pick(item, params.items.identifierFields));
+                parentFhtable.trigger('removeMultipleValuesFilter', name, item,
+                        getEventOptions());
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 
@@ -114,13 +127,14 @@ angular.module('fireh_angular_table')
 
             var templateHtml = 
                 '<div class="dropdown fh-table-filter-select"> ' +
-                '  <span class="form-label" ng-if="label">{{ label }}</span> ' +
+                '  <div data-fh-transclude-pane="header"></div> ' +
+
                 '  <button class="btn btn-default dropdown-toggle" ' +
                 '      type="button" id="{{ elementId }}" ' +
                 '      data-toggle="dropdown" aria-haspopup="true" ' +
                 '      aria-expanded="false"> ' +
 
-                '    <span data-fh-transclude-pane="label"></span> ' +
+                '    <span data-fh-transclude-pane="caption"></span> ' +
 
                 '    <span ng-if="!data.selectedItems.length" ' +
                 '        class="fa fa-caret-down"></span> ' +
@@ -129,10 +143,13 @@ angular.module('fireh_angular_table')
                 '        class="fa fa-caret-square-o-down"></span> ' +
 
                 '  </button> ' +
-                '  <div class="dropdown-menu" ' +
+
+                '  <div data-fh-transclude-pane="footer"></div> ' +
+
+                '  <div class="dropdown-menu" id="{{ popupElementId }}" ' +
                 '      aria-labelledby="{{ elementId }}"> ' +
 
-                '    <div data-fh-transclude-pane="content"></div> ' +
+                '    <div data-fh-transclude-pane="popup"></div> ' +
                 '  </div> ' +
                 '</div> ';
 
@@ -140,7 +157,7 @@ angular.module('fireh_angular_table')
                 // get directive content and insert into template
                 transclude(scope, function(clone, scope) {
                     el.html(htmlStr);
-                    TranscludeChildDirectiveMixin(el, clone);
+                    TranscludeChildElementsMixin(el, clone);
                     $compile(el.contents())(scope);
                 });
             }
@@ -154,10 +171,10 @@ angular.module('fireh_angular_table')
 
             // trigger filterUpdated to initialize all filters
             _.forOwn(scope.dataParams.filterBy, function(value, key) {
-                scope.params.trigger('filterUpdated', key, value);
+                scope.fhtable.trigger('filterUpdated', key, value);
             });
 
-            scope.params.trigger('fetchItems', {initialFetchItems: true});
+            scope.fhtable.trigger('fetchItems', {initialFetchItems: true});
         };
 
         return myDirective;

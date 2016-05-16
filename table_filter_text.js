@@ -10,30 +10,32 @@ angular.module('fireh_angular_table')
         '$compile',
         '$templateRequest',
         'FhTableDefinitionMixin',
+        'FhTranscludeChildElementsMixin',
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
         'FhEventHandlersMixin',
+        'FhElementIdMixin',
         function(
             $compile,
             $templateRequest,
             TableDefinitionMixin,
+            TranscludeChildElementsMixin,
             CustomEventHandlersMixin,
             MiddlewaresMixin,
-            EventHandlersMixin) {
+            EventHandlersMixin,
+            ElementIdMixin) {
 
         var myDirective = {
             restrict: 'A',
-            scope: true
+            scope: true,
+            transclude: true
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
             //// element attributes
 
-            var name = $attrs.fhpName || $attrs.fhTableFilterText || '$';
-
-            $attrs.$observe('fhpLabel', function(value) {
-                $scope.label = value;
-            });
+            var name = $attrs.fhpName || $attrs.fhTableFilterText || '*';
+            var elementId = ElementIdMixin($attrs, 'fh-table-filter-text-');
 
             $attrs.$observe('fhpPlaceholder', function(value) {
                 $scope.placeholder = value;
@@ -43,15 +45,24 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
-            $scope.data = {value: ''};
             $scope.name = name;
+            $scope.value = '';
+            $scope.elementId = elementId;
 
             //// scope functions
 
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
+
             $scope.changeFilter = function changeFilter() {
-                params.trigger('setSingleValueFilter', name, $scope.data.value);
+                fhtable.trigger('setSingleValueFilter', name, $scope.value,
+                        getEventOptions());
             };
 
             //// events
@@ -61,17 +72,18 @@ angular.module('fireh_angular_table')
             displayEvents.filterUpdated = function(event, filterName,
                     filterValue) {
 
-                if (filterName === name) { $scope.data.value = filterValue }
+                if (filterName === name) { $scope.value = filterValue }
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 
@@ -81,29 +93,23 @@ angular.module('fireh_angular_table')
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =
-                '<div class="input-group fh-table-filter-text" ng-if="label"> ' +
-                '  <span class="form-label">{{ label }}</span> ' +
-                '  <input type="text" class="form-control" ' +
-                '      name="{{ name }}" ' +
-                '      placeholder="{{ placeholder }}" ' +
-                '      ng-change="changeFilter()" ' +
-                '      ng-click="$event.stopPropagation()" ' +
-                '      ng-model="data.value" ' +
-                '      ng-model-options="{ debounce: { default: 500 } }"> ' +
+                '<div data-fh-transclude-pane="header"></div> ' +
 
-                '</div> ' +
-                '<input type="text" class="form-control" ' +
+                '<input type="text" class="form-control" id="{{ elementId }}"' +
                 '    name="{{ name }}" ' +
                 '    placeholder="{{ placeholder }}" ' +
-                '    ng-change="changeFilter()" ' +
-                '    ng-click="$event.stopPropagation()" ' +
-                '    ng-if="!label" ' +
-                '    ng-model="data.value" ' +
-                '    ng-model-options="{ debounce: { default: 500 } }"> ';
+                '    data-ng-model="value" ' +
+                '    data-ng-change="changeFilter()"> ' +
+
+                '<div data-fh-transclude-pane="footer"></div>';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr);
-                $compile(el.contents())(scope);
+                // get directive content and insert into template
+                transclude(scope, function(clone, scope) {
+                    el.html(htmlStr);
+                    TranscludeChildElementsMixin(el, clone);
+                    $compile(el.contents())(scope);
+                });
             }
 
             if (templateUrl) {

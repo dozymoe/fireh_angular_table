@@ -35,11 +35,11 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
-            var params = $scope.params;
+            var fhtable = $scope.fhtable;
 
             $scope.pager = {
-                pageOffset: params.items.page,
-                pageSize: params.items.pageSize,
+                pageOffset: fhtable.items.page,
+                pageSize: fhtable.items.pageSize,
 
                 itemsTotal: 0,
 
@@ -113,10 +113,16 @@ angular.module('fireh_angular_table')
 
             //// scope functions
 
-            $scope.select = function select(pageOffset) {
-                params.trigger('setPageOffset', pageOffset);
-            };
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
 
+            $scope.select = function select(pageOffset) {
+                fhtable.trigger('setPageOffset', pageOffset, getEventOptions());
+            };
 
             //// events
 
@@ -140,14 +146,15 @@ angular.module('fireh_angular_table')
                 calculate();
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 

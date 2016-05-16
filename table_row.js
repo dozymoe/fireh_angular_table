@@ -11,11 +11,13 @@ angular.module('fireh_angular_table')
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
         'FhEventHandlersMixin',
+        'FhFormIdMixin',
         function(
             TableDefinitionMixin,
             CustomEventHandlersMixin,
             MiddlewaresMixin,
-            EventHandlersMixin) {
+            EventHandlersMixin,
+            FormIdMixin) {
 
         var myDirective = {
             restrict: 'A',
@@ -23,90 +25,88 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            // fh-table-row borrows $scope.data from fh-table
+
             //// element attributes
 
-            // required if you use middleware FhFormSessionStorage
-            var dataType = $attrs.fhDataType;
-
             var originalData = $scope[$attrs.fhTableRow || $attrs.fhpRowItem];
+            var editable = $attrs.fhpEditable;
 
             TableDefinitionMixin($scope, $attrs);
 
             //// scope variables
 
-            var params = $scope.params;
+            $scope.data.modifiedFields = {};
 
+            $scope.original = {};
+            $scope.draft = {};
             $scope.isEditing = false;
 
-            $scope.isSelected = _.find($scope.data.selectedItems,
-                    params.getItemId(originalData));
+            var fhtable = $scope.fhtable;
 
-            var formId = _.uniqueId('fh-table-form-');
+            $scope.isSelected = _.find($scope.data.selectedItems,
+                    fhtable.getItemId(originalData));
 
             //// scope functions
 
+            function displayNonEditableError() {
+                if (console.assert) {
+                    console.assert(editable, 'data-fhp-editable required');
+                }
+            }
+
+            function getEventOptions() {
+                return {
+                    // allows for dynamic form-id
+                    formId: FormIdMixin($scope, $attrs, $scope.original,
+                            editable)
+                }
+            }
+
             $scope.cancel = function rowEditCancel() {
-                params.trigger(
-                    'editingEnd',
-                    $scope.draft,
-                    $scope.original,
-                    {
-                        formName: formId
-                    });
+                fhtable.trigger('editingEnd', $scope.draft, $scope.original,
+                        getEventOptions());
             };
 
             $scope.delete = function rowDelete() {
-                params.trigger(
-                    'deleteItem',
-                    $scope.original,
-                    {
-                        formName: formId
-                    });
+                displayNonEditableError();
+                fhtable.trigger('deleteItem', $scope.original,
+                        getEventOptions());
             };
 
             $scope.edit = function rowEdit() {
-                params.trigger(
-                    'editingBegin',
-                    $scope.draft,
-                    $scope.original,
-                    {
-                        formName: formId
-                    });
+                displayNonEditableError();
+                fhtable.trigger('editingBegin', $scope.draft, $scope.original,
+                        getEventOptions());
             };
 
-            $scope.create = function formCreate() {
-                params.trigger(
-                    'addItem',
-                    $scope.draft,
-                    {
-                        formName: name
-                    });
+            $scope.create = function rowCreate() {
+                displayNonEditableError();
+                fhtable.trigger('addItem', $scope.draft, $scope.original,
+                        getEventOptions());
             };
 
             $scope.save = function rowSave() {
-                params.trigger(
-                    'updateItemData',
-                    $scope.draft,
-                    $scope.original,
-                    {
-                        formName: formId
-                    });
+                displayNonEditableError();
+                fhtable.trigger('updateItemData', $scope.draft, $scope.original,
+                        getEventOptions());
+            };
+
+            $scope.resetField = function resetField(fieldName) {
+                displayNonEditableError();
+                fhtable.trigger('draftSetField', $scope.original, fieldName,
+                        $scope.original[fieldName], getEventOptions());
             };
 
             $scope.toggleSelect = function toggleSelect(event) {
                 var eventName = event.currentTarget.checked ? 'selectItem'
                         : 'deselectItem';
 
-                params.trigger(eventName, $scope.original);
+                fhtable.trigger(eventName, $scope.original, getEventOptions());
             };
 
             $scope.select = function select() {
                 $scope.toggleSelect({currentTarget: {checked: true}});
-            };
-
-            $scope.isFieldModified = function isFieldModified(fieldName) {
-                return !params.isFieldsEqual(fieldName,
-                        $scope.original[fieldName], $scope.draft[fieldName]);
             };
 
             //// events
@@ -116,94 +116,114 @@ angular.module('fireh_angular_table')
             actionEvents.draftSetField = function(event, item, fieldName,
                     value, options) {
 
-                if (!params.isItemsEqual($scope.original, item)) { return }
+                // draft events are always related to a form
+                if (options.formId !== $scope.formId) { return }
                 $scope.draft[fieldName] = value;
-                params.trigger('draftUpdated', $scope.draft, options);
+
+                fhtable.trigger('draftUpdated', $scope.draft, item, options);
             }
 
             actionEvents.draftUnsetField = function(event, item, fieldName,
                     value, options) {
 
-                if (!params.isItemsEqual($scope.original, item) ||
-                        !params.isFieldsEqual(fieldName,
-                        $scope.draft[fieldName], value)) { return }
-
+                // draft events are always related to a form
+                if (options.formId !== $scope.formId) { return }
                 $scope.draft[fieldName] = null;
-                params.trigger('draftUpdated', $scope.draft, options);
+
+                fhtable.trigger('draftUpdated', $scope.draft, item, options);
             }
 
             actionEvents.editingBegin = function(event, draft, item, options) {
-                if (options.formName === formId) { $scope.isEditing = true }
+                // editingBegin is always related to a form
+                if (options.formId !== $scope.formId) { return }
+                $scope.isEditing = true;
             };
 
             actionEvents.editingEnd = function(event, draft, item, options) {
-                if (options.formName === formId) { $scope.isEditing = false }
+                // editingBegin is always related to a form
+                if (options.formId !== $scope.formId) { return }
+                $scope.isEditing = false;
             };
 
-            actionEvents.updateFormData = function(event, value, options) {
-                if (options.formName !== formId) { return }
-                $scope.original = value;
-                $scope.draft = _.cloneDeep(value);
-                params.trigger('formDataUpdated', value, options);
-                params.trigger('draftUpdated', $scope.draft, options);
+            actionEvents.updateFormData = function(event, item, options) {
+                // updateFormData is always related to a form
+                if (options.formId !== $scope.formId) { return }
+                $scope.original = item;
+                $scope.draft = _.cloneDeep(item);
+
+                fhtable.trigger('formDataUpdated', item, options);
+                fhtable.trigger('draftUpdated', $scope.draft, item, options);
             };
 
             var displayEvents = {};
 
-            displayEvents.itemAdded = function(event, item, draft, options) {
-                if (!params.isItemsEqual($scope.draft, draft)) { return }
-                if (options && options.formName === formId) {
-                    params.trigger('editingEnd', draft, item, options);
-                    params.trigger('resetDraft', draft, options);
-                }
+            displayEvents.draftUpdated = function(event, draft, item, options) {
+                // draft events are always related to a form
+                if (options.formId !== $scope.formId) { return }
+
+                _.forEach(draft, function(value, fieldName) {
+                    $scope.data.modifiedFields[fieldName] =
+                            !fhtable.isFieldsEqual(fieldName, value,
+                            $scope.original[fieldName]);
+                });
             };
 
-            displayEvents.itemDataUpdated = function(event, newItem, oldItem, options) {
-                if (!params.isItemsEqual($scope.original, oldItem)) { return }
-                $scope.original = newItem;
-                if (options && options.formName === formId) {
-                    params.trigger('editingEnd', newItem, oldItem, options);
-                    params.trigger('resetDraft', oldItem, options);
+            displayEvents.itemAdded = function(event, newItem, oldItem,
+                    options) {
+
+                // only interested in form related activities
+                if (options.formId !== formId) { return }
+                fhtable.trigger('editingEnd', newItem, oldItem, options);
+                fhtable.trigger('resetDraft', oldItem, options);
+            };
+
+            displayEvents.itemDataUpdated = function(event, newItem, oldItem,
+                    options) {
+
+                if (options.formId === formId) {
+                    // form related activities
+                    fhtable.trigger('editingEnd', newItem, oldItem, options);
+                    fhtable.trigger('resetDraft', oldItem, options);
+                } else if (fhtable.isItemsEqual($scope.original, oldItem)) {
+                    // order our own form data to be updated
+                    fhtable.trigger('updateFormData', newItem,
+                            getEventOptions());
                 }
             };
 
             displayEvents.itemDeleted = function(event, item, options) {
-                if (!params.isItemsEqual($scope.original, item) ||
-                        !$scope.isEditing) { return }
-
-                params.trigger('editingEnd', item, item, options);
-                params.trigger('resetDraft', item, options);
+                // don't care which form it is, if the item was deleted then
+                // close it
+                if (!fhtable.isItemsEqual($scope.original, item)) { return }
+                fhtable.trigger('editingEnd', item, item, options);
+                fhtable.trigger('resetDraft', item, options);
             };
 
-            displayEvents.itemDeselected = function(event, item) {
-                if (!params.isItemsEqual($scope.original, item)) { return }
+            displayEvents.itemDeselected = function(event, item, options) {
+                if (!fhtable.isItemsEqual($scope.original, item)) { return }
                 $scope.isSelected = false;
             };
 
-            displayEvents.itemSelected = function(event, item) {
-                if (!params.isItemsEqual($scope.original, item)) { return }
+            displayEvents.itemSelected = function(event, item, options) {
+                if (!fhtable.isItemsEqual($scope.original, item)) { return }
                 $scope.isSelected = true;
             };
 
-            CustomEventHandlersMixin(actionEvents, $attrs, params);
-            MiddlewaresMixin(actionEvents, $attrs, params);
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(actionEvents, $attrs, fhtable);
+            MiddlewaresMixin(actionEvents, $attrs, fhtable);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 _.merge(actionEvents, displayEvents),
                 {
                     scope: $scope,
-                    params: params,
-                    dataType: dataType
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
 
-            params.trigger(
-                'updateFormData',
-                originalData,
-                {
-                    formName: formId
-                });
+            fhtable.trigger('updateFormData', originalData,
+                    getEventOptions());
         };
 
         return myDirective;

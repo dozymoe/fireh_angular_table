@@ -10,64 +10,87 @@ angular.module('fireh_angular_table')
         '$compile',
         '$templateRequest',
         'FhTableDefinitionMixin',
+        'FhTranscludeChildElementsMixin',
         'FhCustomEventHandlersMixin',
         'FhMiddlewaresMixin',
         'FhEventHandlersMixin',
+        'FhElementIdMixin',
         function(
             $compile,
             $templateRequest,
             TableDefinitionMixin,
+            TranscludeChildElementsMixin,
             CustomEventHandlersMixin,
             MiddlewaresMixin,
-            EventHandlersMixin) {
+            EventHandlersMixin,
+            ElementIdMixin) {
 
         var myDirective = {
             restrict: 'A',
-            scope: true
+            scope: true,
+            transclude: true
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
             //// element attributes
+
             var name = $attrs.fhpName || $attrs.fhTableSorting;
+            var elementId = ElementIdMixin($attrs, 'fh-table-sorting-');
 
             TableDefinitionMixin($scope, $attrs);
 
             //// scope variables
-            var params = $scope.params;
+
+            var fhtable = $scope.fhtable;
 
             $scope.priority = 0;
             $scope.direction = null;
+            $scope.elementId = elementId;
 
             //// scope functions
 
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
+
             $scope.sortAsc = function tableSortAscending(event) {
-                event.preventDefault();
-                params.trigger('setOrder', name, {direction: 'asc'});
+                fhtable.trigger('setOrder', name, {direction: 'asc'},
+                        getEventOptions());
             };
 
             $scope.sortDesc = function tableSortDescending(event) {
-                event.preventDefault();
-                params.trigger('setOrder', name, {direction: 'desc'});
+                fhtable.trigger('setOrder', name, {direction: 'desc'},
+                        getEventOptions());
             };
 
             $scope.sortBefore = function tableSortBefore(event) {
-                event.preventDefault();
                 if ($scope.priority > 1) {
-                    params.trigger('setOrder', name,
-                            {priority: $scope.priority - 1});
+                    fhtable.trigger(
+                        'setOrder',
+                        name,
+                        {
+                            priority: $scope.priority - 1
+                        },
+                        getEventOptions());
                 }
             };
 
             $scope.sortAfter = function tableSortAfter(event) {
-                event.preventDefault();
-                params.trigger('setOrder', name,
-                        {priority: $scope.priority + 1});
+                fhtable.trigger(
+                    'setOrder',
+                    name,
+                    {
+                        priority: $scope.priority + 1
+                    },
+                    getEventOptions());
             };
 
             $scope.sortClear = function tableSortClear(event) {
-                event.preventDefault();
                 if ($scope.priority) {
-                    params.trigger('setOrder', name, null);
+                    fhtable.trigger('setOrder', name, null, getEventOptions());
                 }
             };
 
@@ -89,14 +112,15 @@ angular.module('fireh_angular_table')
                 }
             };
 
-            CustomEventHandlersMixin(displayEvents, $attrs, params);
-            MiddlewaresMixin(displayEvents, $attrs, params, true);
+            CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
+            MiddlewaresMixin(displayEvents, $attrs, fhtable, true);
 
             EventHandlersMixin(
                 displayEvents,
                 {
                     scope: $scope,
-                    params: params,
+                    fhtable: fhtable,
+                    optionsGetter: getEventOptions
                 });
         };
 
@@ -106,10 +130,13 @@ angular.module('fireh_angular_table')
 
             var templateHtml =
                 '<div class="dropdown fh-table-sorting"> ' +
-                '  <button type="button" class="dropdown-toggle" ' +
-                '      ng-class="{active: priority}" ' +
+                '  <div data-fh-transclude-pane="header"></div> ' +
+
+                '  <button class="btn btn-default dropdown-toggle" ' +
+                '      type="button" id="{{ elementId }}" ' +
                 '      data-toggle="dropdown" aria-haspopup="true" ' +
-                '      title="{{ \'Sorting\' }}"> ' +
+                '      aria-expanded="false" title="{{ \'Sorting\' }}" ' +
+                '      ng-class="{active: priority}"> ' +
 
                 '    <span class="fa fa-sort" ng-if="!priority"></span> ' +
                 '    <span class="fa fa-sort-asc" ' +
@@ -124,40 +151,57 @@ angular.module('fireh_angular_table')
                 '        ng-if="priority">{{ priority }}</span> ' +
 
                 '  </button> ' +
+
+                '  <div data-fh-transclude-pane="footer"></div> ' +
+
                 '  <ul class="dropdown-menu"> ' +
                 '    <li ng-class="{disabled: direction === \'asc\'}"> ' +
-                '      <a href="#" ng-click="sortAsc($event)"> ' +
+                '      <a href="#" ng-click="sortAsc($event); ' +
+                           '$event.preventDefault()"> ' +
+
                 '        {{ \'Sort ascending\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
                 '    <li ng-class="{disabled: direction === \'desc\'}"> ' +
-                '      <a href="#" ng-click="sortDesc($event)"> ' +
+                '      <a href="#" ng-click="sortDesc($event); ' +
+                           '$event.preventDefault()"> ' +
+
                 '        {{ \'Sort descending\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
                 '    <li role="separator" class="divider"></li> ' +
                 '    <li ng-class="{disabled: priority <= 1}"> ' +
-                '      <a href="#" ng-click="sortBefore($event)"> ' +
+                '      <a href="#" ng-click="sortBefore($event); ' +
+                           '$event.preventDefault()"> ' +
+
                 '        {{ \'Increase priority\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
                 '    <li ng-class="{disabled: !priority}"> ' +
-                '      <a href="#" ng-click="sortAfter($event)"> ' +
+                '      <a href="#" ng-click="sortAfter($event); ' +
+                           '$event.preventDefault()"> ' +
+
                 '        {{ \'Decrease priority\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
                 '    <li role="separator" class="divider"></li> ' +
                 '    <li  ng-class="{disabled: !priority}"> ' +
-                '      <a href="#" ng-click="sortClear($event)"> ' +
+                '      <a href="#" ng-click="sortClear($event); ' +
+                           '$event.preventDefault()"> ' +
+
                 '        {{ \'Clear\' }} ' +
                 '      </a> ' +
                 '    </li> ' +
                 '  </ul> ' +
-                '</div> ';
+                '</div>';
 
             function printHtml(htmlStr) {
-                el.html(htmlStr);
-                $compile(el.contents())(scope);
+                // get directive content and insert into template
+                transclude(scope, function(clone, scope) {
+                    el.html(htmlStr);
+                    TranscludeChildElementsMixin(el, clone);
+                    $compile(el.contents())(scope);
+                });
             }
 
             if (templateUrl) {
