@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -47,7 +48,7 @@ angular.module('fireh_angular_table')
             var orderBy = $attrs.fhpOrderBy;
             var orderDir = $attrs.fhpOrderDir || 'asc';
             var multipleSelection = $attrs.fhpSingleSelection === void(0);
-            var elementId = ElementIdMixin(attrs, 'fh-table-filter-select-');
+            var elementId = ElementIdMixin($attrs, 'fh-table-filter-select-');
 
             TableDefinitionMixin($scope, $attrs);
 
@@ -60,7 +61,10 @@ angular.module('fireh_angular_table')
             // our own fhtable
             var fhtable = $scope.fhtable = new TableDefinition(
                     parentFhtable.filterDefinition[name]);
-            if (!fhtable.services) { fhtable.services = parentFhtable.services }
+
+            if (_.isEmpty(fhtable.services)) {
+                fhtable.services = parentFhtable.services;
+            }
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
@@ -69,8 +73,8 @@ angular.module('fireh_angular_table')
             $scope.elementId = elementId;
             $scope.popupElementId = elementId + '-popup';
 
-            if (pageSize) { $scope.dataParams.pageSize = pageSize }
-            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
+            if (pageSize) { $scope.dataParams.pageSize = pageSize; }
+            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]]; }
 
             //// events
 
@@ -78,7 +82,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             fhtable.on('ajaxRequestStarted', function() {
@@ -92,8 +96,8 @@ angular.module('fireh_angular_table')
             parentFhtable.on('filterUpdated', function(event, filterName,
                         filterValue) {
 
-                if (filterName !== name) { return }
-                $scope.data.value = filterValue;
+                if (filterName !== name) { return; }
+                $scope.data.selectedItems = filterValue;
             });
 
             var displayEvents = {};
@@ -180,3 +184,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

@@ -30,16 +30,25 @@ angular.module('fireh_angular_table')
             //// element attributes
 
             var originalData = $scope[$attrs.fhTableRow || $attrs.fhpRowItem];
-            var editable = $attrs.fhpEditable;
+            var editable = $attrs.fhpEditable !== void(0) &&
+                    $attrs.fhpEditable !== 'false';
 
             TableDefinitionMixin($scope, $attrs);
+            // generate initial form-id
+            FormIdMixin($scope, $attrs, originalData, editable,
+                    'fh-table-row-');
 
             //// scope variables
 
             $scope.data.modifiedFields = {};
 
-            $scope.original = {};
-            $scope.draft = {};
+            if (_.isEmpty(originalData)) {
+                $scope.original = {};
+                $scope.draft = {};
+            } else {
+                $scope.original = originalData;
+                $scope.draft = _.cloneDeep(originalData);
+            }
             $scope.isEditing = false;
 
             var fhtable = $scope.fhtable;
@@ -59,7 +68,7 @@ angular.module('fireh_angular_table')
                 return {
                     // allows for dynamic form-id
                     formId: FormIdMixin($scope, $attrs, $scope.original,
-                            editable)
+                            false, 'fh-table-row-')
                 }
             }
 
@@ -109,6 +118,11 @@ angular.module('fireh_angular_table')
                 $scope.toggleSelect({currentTarget: {checked: true}});
             };
 
+            $scope.triggerDraftUpdated = function triggerDraftUpdated() {
+                fhtable.trigger('draftUpdated', $scope.draft, $scope.original,
+                        getEventOptions());
+            };
+
             //// events
 
             var actionEvents = {};
@@ -147,7 +161,7 @@ angular.module('fireh_angular_table')
 
             actionEvents.updateFormData = function(event, item, options) {
                 // updateFormData is always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (!$scope.formId || options.formId !== $scope.formId) { return }
                 $scope.original = item;
                 $scope.draft = _.cloneDeep(item);
 
@@ -172,7 +186,7 @@ angular.module('fireh_angular_table')
                     options) {
 
                 // only interested in form related activities
-                if (options.formId !== formId) { return }
+                if (options.formId !== $scope.formId) { return }
                 fhtable.trigger('editingEnd', newItem, oldItem, options);
                 fhtable.trigger('resetDraft', oldItem, options);
             };
@@ -180,7 +194,7 @@ angular.module('fireh_angular_table')
             displayEvents.itemDataUpdated = function(event, newItem, oldItem,
                     options) {
 
-                if (options.formId === formId) {
+                if (options.formId === $scope.formId) {
                     // form related activities
                     fhtable.trigger('editingEnd', newItem, oldItem, options);
                     fhtable.trigger('resetDraft', oldItem, options);
@@ -222,8 +236,10 @@ angular.module('fireh_angular_table')
                     optionsGetter: getEventOptions
                 });
 
-            fhtable.trigger('updateFormData', originalData,
-                    getEventOptions());
+            if (originalData) {
+                fhtable.trigger('updateFormData', originalData,
+                        getEventOptions());
+            }
         };
 
         return myDirective;

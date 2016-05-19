@@ -96,7 +96,8 @@ angular.module('fireh_angular_table')
             }
 
             $scope.showModal = function showModal() {
-                jQuery(document.getElementById(popupElementId)).modal('show');
+                jQuery(document.getElementById($scope.popupElementId))
+                        .modal('show');
             }
 
             //// events

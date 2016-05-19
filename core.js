@@ -35,7 +35,7 @@ angular.module('fireh_angular_table', [])
 
                     services: []
                 });
-            _.mergeDeep(this, settings);
+            _.merge(this, settings);
 
             if (console.assert) {
                 console.assert(this.items.identifierFields !== void(0),
@@ -128,7 +128,8 @@ angular.module('fireh_angular_table', [])
                 // check if field has identifierFields
                 if (this.fieldDefinition[fieldName] &&
                         this.fieldDefinition[fieldName].items &&
-                        this.fieldDefinition[fieldName].items.identifierFields) {
+                        this.fieldDefinition[fieldName].items
+                        .identifierFields) {
 
                     return _.pick(item, this.fieldDefinition[fieldName].items.
                             identifierFields);
@@ -143,6 +144,21 @@ angular.module('fireh_angular_table', [])
 
                 return _.isEqual(this.getFieldId(fieldName, item1),
                         this.getFieldId(fieldName, item2));
+            };
+
+            this.getFilterId = function getFilterId(filterName, item) {
+                // check if filter has identifierFields
+                if (this.filterDefinition[filterName] &&
+                        this.filterDefinition[filterName].items &&
+                        this.filterDefinition[filterName].items
+                        .identifierFields) {
+
+                    return _.pick(item, this.filterDefinition[filterName].items.
+                            identifierFields);
+
+                } else {
+                    return item;
+                }
             };
 
             this.getItemId = function getItemId(item) {

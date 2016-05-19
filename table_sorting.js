@@ -124,8 +124,9 @@ angular.module('fireh_angular_table')
                 });
         };
 
-        myDirective.link = function(scope, el, attrs) {
+        myDirective.link = function(scope, el, attrs, ctrl, transclude) {
             //// element attributes
+
             var templateUrl = attrs.fhpTemplateUrl;
 
             var templateHtml =

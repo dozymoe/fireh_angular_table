@@ -1,3 +1,4 @@
+(function(){
 'use strict';
 
 if (window.require) {
@@ -28,22 +29,26 @@ angular.module('fireh_angular_table')
 
                     var storageKey = getStorageKey(options.formId);
 
-                    var isEqual = _.transform(
+                    var diffs = _.transform(
                         draft,
                         function(result, value, fieldName) {
-                            result = fhtable.isFieldsEqual(fieldName, value,
-                                scope.original[fieldName]);
-                            return result;
-                        });
-                    if (isEqual) {
-                        storage.removeItem(storageKey);
-                    } else {
+                            if (!fhtable.isFieldsEqual(fieldName, value,
+                                    scope.original[fieldName])) {
+
+                                result.push(fieldName);
+                                return false;
+                            }
+                        },
+                        []);
+                    if (diffs.length) {
                         storage.setItem(
                             storageKey,
                             JSON.stringify({
                                 timestamp: new Date(),
                                 content: draft
                             }));
+                    } else {
+                        storage.removeItem(storageKey);
                     }
                 }
                 this.nextCallback(event, draft, item, options);
@@ -52,7 +57,9 @@ angular.module('fireh_angular_table')
             function _onUpdateFormData(event, item, options) {
                 var widgetOptions = this.optionsGetter();
 
-                if (options.formId !== widgetOptions.formId) {
+                if (!widgetOptions.formId ||
+                        options.formId !== widgetOptions.formId) {
+
                     this.nextCallback(event, item, options);
                     return;
                 }
@@ -78,15 +85,16 @@ angular.module('fireh_angular_table')
             }
 
             this.getEventHandlers = function() {
-                if (!storage) { return {} }
+                if (!storage) { return {}; }
 
                 return {
                     draftUpdated: _onDraftUpdated,
                     updateFormData: _onUpdateFormData
-                }
+                };
             };
         };
 
         return FhFormSessionStorage;
     })
 ;
+}());

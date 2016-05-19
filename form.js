@@ -29,16 +29,17 @@ angular.module('fireh_angular_table')
 
             //// element attributes
 
-            var originalData = $attrs.fhFormItem ? $scope[$attrs.fhFormItem]
-                    : {};
+            var originalData = $scope[$attrs.fhFormItem];
 
             TableDefinitionMixin($scope, $attrs, 'fhForm');
+            // generate initial form-id
+            FormIdMixin($scope, $attrs, originalData, true);
 
             //// scope variables
 
             $scope.data.modifiedFields = {};
 
-            $scope.original = {};
+            $scope.original = originalData || {};
             $scope.draft = {};
 
             var fhtable = $scope.fhtable;
@@ -48,7 +49,7 @@ angular.module('fireh_angular_table')
             function getEventOptions() {
                 return {
                     // allows for dynamic form-id
-                    formId: FormIdMixin($scope, $attrs, $scope.original, true)
+                    formId: FormIdMixin($scope, $attrs, $scope.original)
                 }
             }
 

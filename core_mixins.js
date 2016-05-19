@@ -1,3 +1,4 @@
+(function(){
 'use strict';
 
 if (window.require) {
@@ -13,7 +14,7 @@ angular.module('fireh_angular_table')
             } else if (attrs[alternateAttrField]) {
                 scope.fhtable = scope[attrs[alternateAttrField]];
             }
-        }
+        };
     })
 
 
@@ -64,7 +65,7 @@ angular.module('fireh_angular_table')
                     scope.data.selectedItems[index] = newItem;
                 }
             });
-        }
+        };
     })
 
 
@@ -180,20 +181,26 @@ angular.module('fireh_angular_table')
 
                 function updateFilter(value) {
                     // save value into $scope.dataParams
-                    filters[filterName] = value;
+                    //
+                    // honestly I dunno, if you removed _.cloneDeep() weird
+                    // things will happen
+                    filters[filterName] = _.cloneDeep(value);
                     fhtable.trigger('filterUpdated', filterName, value);
                     fhtable.trigger('resetItems');
                 }
 
                 if (filter) {
-                    var index = _.findIndex(filter, filterValue);
+                    var filterId = fhtable.getFilterId(filterName,
+                            filterValue);
+
+                    var index = _.findIndex(filter, filterId);
                     if (index === -1) {
                         filter.push(filterValue);
                         filter = _.uniq(_.sortBy(filter));
                         updateFilter(filter);
                     }
                 } else {
-                    updateFilter([filterValue])
+                    updateFilter([filterValue]);
                 }
             });
 
@@ -205,7 +212,16 @@ angular.module('fireh_angular_table')
 
                 function updateFilter(value) {
                     // save value into $scope.dataParams
-                    filters[filterName] = value;
+                    //
+                    // honestly I dunno, if you removed _.cloneDeep() weird
+                    // things will happen
+                    // this function's scope.dataParams.filterBy, and the above
+                    // function's scope.dataParams.filterBy will become
+                    // disconnected
+                    //
+                    // possibly something to do with _.remove() in
+                    // itemDeselected event handler of FhSelectedItemsMixin
+                    filters[filterName] = _.cloneDeep(value);
                     fhtable.trigger('filterUpdated', filterName, value);
                     fhtable.trigger('resetItems');
                 }
@@ -231,7 +247,7 @@ angular.module('fireh_angular_table')
                 var priority = _.findIndex(
                     list,
                     function(item) {
-                        return item[0] === sortingName
+                        return item[0] === sortingName;
                     }) + 1;
 
                 if (priority) {
@@ -366,7 +382,7 @@ angular.module('fireh_angular_table')
                     scope.data.items[index] = newItem;
                 }
             });
-        }
+        };
     })
 
 
@@ -424,7 +440,7 @@ angular.module('fireh_angular_table')
                         $el.attr(transcluded_directive_value_attrname));
                 $el.removeAttr(transcluded_directive_attrname);
             });
-        }
+        };
     })
 
 
@@ -440,17 +456,17 @@ angular.module('fireh_angular_table')
                 }
                 eventHandlers[eventName] = callbackArray;
             });
-        }
+        };
     })
 
 
     .factory('FhMiddlewaresMixin', function() {
         return function(eventHandlers, attrs, fhtable, reversed) {
             var middlewares, forLoop;
-            if (attrs.fheMiddlewares) {
+            if (attrs.fhpMiddlewares) {
                 middlewares = _.transform(
-                    attrs.fheMiddlewares.split(','),
-                    function(result, value) { result.push(value.trim()) },
+                    attrs.fhpMiddlewares.split(','),
+                    function(result, value) { result.push(value.trim()); },
                     []);
             } else {
                 middlewares = fhtable.middlewares;
@@ -466,22 +482,24 @@ angular.module('fireh_angular_table')
 
                 _.forEach(middlewares, function(middlewareName) {
                     var middleware = fhtable.services[middlewareName];
-                    if (!middleware || !middleware.getEventHandlers) { return }
+                    if (!middleware || !middleware.getEventHandlers) { return; }
                     var mEventHandlers = middleware.getEventHandlers();
-                    if (!mEventHandlers[eventName]) { return }
+                    if (!mEventHandlers[eventName]) { return; }
                     callbackArray.push(mEventHandlers[eventName]);
                 });
 
                 eventHandlers[eventName] = callbackArray;
             });
-        }
+        };
     })
 
 
     .factory('FhEventHandlersMixin', function() {
         return function(eventHandlers, options) {
             var scope = options.scope;
-            if (options.fhtable === void(0)) { options.fhtable = scope.fhtable }
+            if (options.fhtable === void(0)) {
+                options.fhtable = scope.fhtable;
+            }
             var fhtable = options.fhtable;
 
             _.forEach(eventHandlers, function(callback, eventName) {
@@ -494,23 +512,23 @@ angular.module('fireh_angular_table')
                 });
                 fhtable.on(eventName, lastCallback);
             });
-        }
+        };
     })
 
 
     .factory('FhFormIdMixin', function() {
         return function(scope, attrs, item, create, name) {
             function generateFormId(name) {
-                if (item !== void(0)) {
+                if (!_.isEmpty(item)) {
                     // dynamic form-id based on identifier-fields
                     var id = scope.fhtable.identifierAsString(item);
-                    return formName + id;
-                else {
+                    return name + id;
+                } else {
                     // this will create totally random form-id which is
                     // impossible to cache (for example, in SessionStorage)
                     //
                     // last resort of a unique id for throw away forms
-                    return _.uniqueId(formName);
+                    return _.uniqueId(name);
                 }
             }
 
@@ -523,7 +541,7 @@ angular.module('fireh_angular_table')
             }
 
             return scope.formId;
-        }
+        };
     })
 
 
@@ -533,6 +551,7 @@ angular.module('fireh_angular_table')
                 return attrs.fhpElementId;
             }
             return _.uniqueId(attrs.fhpElementName || name || 'fh-widget-');
-        }
+        };
     })
 ;
+}());

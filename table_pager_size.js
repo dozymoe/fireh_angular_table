@@ -27,7 +27,8 @@ angular.module('fireh_angular_table')
 
         var myDirective = {
             restrict: 'A',
-            scope: true
+            scope: true,
+            transclude: true
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
@@ -95,7 +96,7 @@ angular.module('fireh_angular_table')
                 });
         };
 
-        myDirective.link = function(scope, el, attrs) {
+        myDirective.link = function(scope, el, attrs, ctrl, transclude) {
             //// element attributes
 
             var templateUrl = attrs.fhpTemplateUrl;

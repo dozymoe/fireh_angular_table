@@ -36,10 +36,17 @@ angular.module('fireh_angular_table')
 
             //// scope functions
 
+            function getEventOptions() {
+                return {
+                    // we use dynamic form-id of parent element
+                    formId: $scope.formId
+                }
+            }
+
             $scope.execute = function batchExecute() {
                 if ($scope.data.selectedItems) {
                     fhtable.trigger('batchAction', $scope.data.actionName,
-                            $scope.data.selectedItems, eventOptions);
+                            $scope.data.selectedItems, getEventOptions());
 
                     $scope.data.actionName = '';
                 }

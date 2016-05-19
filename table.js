@@ -50,6 +50,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
+                };
             }
 
             $scope.toggleSelectAll = function toggleSelectAll(event) {

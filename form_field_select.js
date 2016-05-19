@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -59,8 +60,11 @@ angular.module('fireh_angular_table')
 
             // our own fhtable
             var fhtable = $scope.fhtable = new TableDefinition(
-                    tableParams.fieldDefinition[name]);
-            if (!fhtable.services) { fhtable.services = parentFhtable.services }
+                    parentFhtable.fieldDefinition[name]);
+
+            if (_.isEmpty(fhtable.services)) {
+                fhtable.services = parentFhtable.services;
+            }
 
             ListResourceControllerMixin($scope);
             SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
@@ -69,8 +73,8 @@ angular.module('fireh_angular_table')
             $scope.elementId = elementId;
             $scope.popupElementId = elementId + '-popup';
 
-            if (pageSize) { $scope.dataParams.pageSize = pageSize }
-            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
+            if (pageSize) { $scope.dataParams.pageSize = pageSize; }
+            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]]; }
             // update selectedItems
             if ($scope.draft && $scope.draft[name]) {
                 $scope.data.selectedItems = [$scope.draft[name]];
@@ -82,7 +86,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             fhtable.on('ajaxRequestStarted', function() {
@@ -96,7 +100,7 @@ angular.module('fireh_angular_table')
             parentFhtable.on('draftUpdated', function(event, draft, item,
                     options) {
 
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('itemSelected', item[name], options);
             });
 
@@ -178,3 +182,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());
