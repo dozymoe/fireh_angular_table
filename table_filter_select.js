@@ -39,6 +39,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {};
 
             //// element attributes
@@ -66,8 +68,9 @@ angular.module('fireh_angular_table')
                 fhtable.services = parentFhtable.services;
             }
 
-            ListResourceControllerMixin($scope);
-            SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
+            ListResourceControllerMixin($scope, {}, cleanupCallbacks);
+            SelectedItemsMixin($scope, {multipleSelection: multipleSelection},
+                    cleanupCallbacks);
 
             $scope.name = name;
             $scope.elementId = elementId;
@@ -87,18 +90,23 @@ angular.module('fireh_angular_table')
 
             fhtable.on('ajaxRequestStarted', function() {
                 parentFhtable.trigger('ajaxRequestStarted');
-            });
+
+            }, cleanupCallbacks);
 
             fhtable.on('ajaxRequestFinished', function() {
                 parentFhtable.trigger('ajaxRequestFinished');
-            });
+
+            }, cleanupCallbacks);
 
             parentFhtable.on('filterUpdated', function(event, filterName,
                         filterValue) {
 
                 if (filterName !== name) { return; }
-                $scope.data.selectedItems = filterValue;
-            });
+                // careful not to assigned an array by reference, we don't mind
+                // about the array's items though
+                $scope.data.selectedItems = _.clone(filterValue);
+
+            }, cleanupCallbacks);
 
             var displayEvents = {};
 
@@ -121,7 +129,15 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+                fhtable.destroy();
+            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {

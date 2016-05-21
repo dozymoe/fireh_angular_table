@@ -39,6 +39,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {};
 
             //// element attributes
@@ -66,8 +68,9 @@ angular.module('fireh_angular_table')
                 fhtable.services = parentFhtable.services;
             }
 
-            ListResourceControllerMixin($scope);
-            SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
+            ListResourceControllerMixin($scope, {}, cleanupCallbacks);
+            SelectedItemsMixin($scope, {multipleSelection: multipleSelection},
+                    cleanupCallbacks);
 
             $scope.name = name;
             $scope.elementId = elementId;
@@ -91,18 +94,21 @@ angular.module('fireh_angular_table')
 
             fhtable.on('ajaxRequestStarted', function() {
                 parentFhtable.trigger('ajaxRequestStarted');
-            });
+
+            }, cleanupCallbacks);
 
             fhtable.on('ajaxRequestFinished', function() {
                 parentFhtable.trigger('ajaxRequestFinished');
-            });
+
+            }, cleanupCallbacks);
 
             parentFhtable.on('draftUpdated', function(event, draft, item,
                     options) {
 
                 if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('itemSelected', item[name], options);
-            });
+
+            }, cleanupCallbacks);
 
             var actionEvents = {};
 
@@ -125,7 +131,15 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+                fhtable.destroy();
+            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {

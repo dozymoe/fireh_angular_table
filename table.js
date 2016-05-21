@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -29,6 +30,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function controller($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {};
 
             //// element attributes
@@ -39,8 +42,8 @@ angular.module('fireh_angular_table')
 
             $scope.isAllSelected = false;
 
-            ListResourceControllerMixin($scope);
-            SelectedItemsMixin($scope);
+            ListResourceControllerMixin($scope, {}, cleanupCallbacks);
+            SelectedItemsMixin($scope, {}, cleanupCallbacks);
 
             var fhtable = $scope.fhtable;
 
@@ -86,7 +89,14 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         myDirective.link = function link(scope) {
@@ -118,3 +128,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

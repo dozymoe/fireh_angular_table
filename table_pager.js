@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -27,6 +28,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             //// element attributes
 
             var pagerLinksCount = $attrs.fhpPagerLinksCount;
@@ -117,7 +120,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             $scope.select = function select(pageOffset) {
@@ -155,7 +158,14 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         myDirective.link = function(scope, el, attrs) {
@@ -212,3 +222,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

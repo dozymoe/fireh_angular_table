@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -38,6 +39,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {};
 
             /* There are two FhTableDefinitions and two FhTableRows.
@@ -70,17 +73,21 @@ angular.module('fireh_angular_table')
             // our own fhtable
             var fhtable = $scope.fhtable = new TableDefinition(
                     parentFhtable.fieldDefinition[name]);
-            if (!fhtable.services) { fhtable.services = parentFhtable.services }
 
-            ListResourceControllerMixin($scope);
-            SelectedItemsMixin($scope, {multipleSelection: multipleSelection});
+            if (_.isEmpty(fhtable.services)) {
+                fhtable.services = parentFhtable.services;
+            }
+
+            ListResourceControllerMixin($scope, {}, cleanupCallbacks);
+            SelectedItemsMixin($scope, {multipleSelection: multipleSelection},
+                    cleanupCallbacks);
 
             $scope.name = name;
             $scope.elementId = elementId;
             $scope.popupElementId = elementId + '-popup';
 
-            if (pageSize) { $scope.dataParams.pageSize = pageSize }
-            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]] }
+            if (pageSize) { $scope.dataParams.pageSize = pageSize; }
+            if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]]; }
             // update selectedItems
             if ($scope.draft && $scope.draft[name]) {
                 $scope.data.selectedItems = [$scope.draft[name]];
@@ -92,30 +99,33 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             $scope.showModal = function showModal() {
                 jQuery(document.getElementById($scope.popupElementId))
                         .modal('show');
-            }
+            };
 
             //// events
 
             fhtable.on('ajaxRequestStarted', function() {
                 parentFhtable.trigger('ajaxRequestStarted');
-            });
+
+            }, cleanupCallbacks);
 
             fhtable.on('ajaxRequestFinished', function() {
                 parentFhtable.trigger('ajaxRequestFinished');
-            });
+
+            }, cleanupCallbacks);
 
             parentFhtable.on('draftUpdated', function(event, draft, item,
                     options) {
 
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('itemSelected', item[name], getEventOptions());
-            });
+
+            }, cleanupCallbacks);
 
             var actionEvents = {};
 
@@ -138,7 +148,15 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+                fhtable.destroy();
+            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
@@ -192,3 +210,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

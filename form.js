@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -25,6 +26,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {};
 
             //// element attributes
@@ -50,7 +53,7 @@ angular.module('fireh_angular_table')
                 return {
                     // allows for dynamic form-id
                     formId: FormIdMixin($scope, $attrs, $scope.original)
-                }
+                };
             }
 
             $scope.cancel = function formCancel() {
@@ -90,23 +93,23 @@ angular.module('fireh_angular_table')
             actionEvents.draftSetField = function(event, item, fieldName,
                     value, options) {
 
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.draft[fieldName] = value;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
-            }
+            };
 
             actionEvents.draftUnsetField = function(event, item, fieldName,
                     value, options) {
 
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.draft[fieldName] = null;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
-            }
+            };
 
             actionEvents.updateFormData = function(event, item, options) {
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.original = item;
                 $scope.draft = _.cloneDeep(item);
 
@@ -118,7 +121,7 @@ angular.module('fireh_angular_table')
             var displayEvents = {};
 
             displayEvents.draftUpdated = function(event, draft, item, options) {
-                if (!options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
 
                 _.forEach(draft, function(value, fieldName) {
                     $scope.data.modifiedFields[fieldName] =
@@ -130,7 +133,7 @@ angular.module('fireh_angular_table')
             displayEvents.itemAdded = function(event, newItem, oldItem,
                     options) {
 
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('editingEnd', newItem, oldItem, options);
                 fhtable.trigger('resetDraft', oldItem, options);
             };
@@ -152,7 +155,7 @@ angular.module('fireh_angular_table')
             displayEvents.itemDeleted = function(event, item, options) {
                 // don't care which form it is, if the item was deleted then
                 // close it
-                if (!fhtable.isItemsEqual($scope.original, item)) { return }
+                if (!fhtable.isItemsEqual($scope.original, item)) { return; }
                 fhtable.trigger('editingEnd', item, item, options);
                 fhtable.trigger('resetDraft', item, options);
             };
@@ -168,14 +171,22 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
 
             if (originalData) {
                 fhtable.trigger('updateFormData', originalData,
                         getEventOptions());
             }
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         return myDirective;
     }])
 ;
+}());

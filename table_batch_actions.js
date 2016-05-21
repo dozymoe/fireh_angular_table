@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -19,6 +20,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             $scope.data = {
                 actionName: '',
                 total: 0
@@ -30,7 +33,7 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
-            SelectedItemsMixin($scope);
+            SelectedItemsMixin($scope, {}, cleanupCallbacks);
 
             var fhtable = $scope.fhtable;
 
@@ -40,7 +43,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             $scope.execute = function batchExecute() {
@@ -56,9 +59,17 @@ angular.module('fireh_angular_table')
 
             fhtable.on('itemsTotalUpdated', function(event, totalItems) {
                 $scope.data.total = totalItems;
+
+            }, cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
             });
         };
 
         return myDirective;
     }])
 ;
+}());

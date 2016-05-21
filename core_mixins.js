@@ -19,10 +19,10 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhSelectedItemsMixin', function() {
-        return function(scope, options) {
+        return function(scope, options, cleanupList) {
             var fhtable = scope.fhtable;
 
-            options = _.merge(
+            var _config = _.merge(
                 {
                     multipleSelection: true
                 },
@@ -30,13 +30,15 @@ angular.module('fireh_angular_table')
 
             scope.data.selectedItems = [];
 
+            var result = {eventCleanupCallbacks: []};
+
             fhtable.on('itemSelected', function(event, item, options) {
                 var id = _.pick(item, fhtable.items.identifierFields);
                 var index = _.findIndex(scope.data.selectedItems, id);
                 if (index !== -1) {
                     scope.data.selectedItems[index] = item;
                 } else {
-                    if (!options.multipleSelection &&
+                    if (!_config.multipleSelection &&
                             scope.data.selectedItems.length) {
 
                         fhtable.trigger('itemDeselected',
@@ -44,17 +46,20 @@ angular.module('fireh_angular_table')
                     }
                     scope.data.selectedItems.push(item);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemDeselected', function(event, item, options) {
                 var id = _.pick(item, fhtable.items.identifierFields);
                 _.remove(scope.data.selectedItems, id);
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemDeleted', function(event, item, options) {
                 var id = _.pick(item, fhtable.items.identifierFields);
                 _.remove(scope.data.selectedItems, id);
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemDataUpdated', function(event, newItem, oldItem,
                     options) {
@@ -64,17 +69,26 @@ angular.module('fireh_angular_table')
                 if (index !== -1) {
                     scope.data.selectedItems[index] = newItem;
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
+
+            if (cleanupList) {
+                _.forEach(result.eventCleanupCallbacks, function(fn) {
+                    cleanupList.push(fn);
+                });
+            }
+
+            return result;
         };
     })
 
 
     .factory('FhTableListResourceControllerMixin', function() {
-        return function(scope, options) {
+        return function(scope, options, cleanupList) {
             var fhtable = scope.fhtable;
             var initialFetchItems = true;
 
-            options = _.merge({}, options || {});
+            var _config = _.merge({}, options || {});
 
             scope.data.items = [];
             scope.data.total = 0;
@@ -88,15 +102,19 @@ angular.module('fireh_angular_table')
 
             scope.isLoading = 0;
 
+            var result = {eventCleanupCallbacks: []};
+
             fhtable.on('ajaxRequestStarted', function incrIsLoading() {
                 scope.isLoading += 1;
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('ajaxRequestFinished', function decrIsLoading() {
                 if (scope.isLoading > 0) {
                     scope.isLoading -= 1;
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('fetchItems', function fetchItems(event, options) {
                 // initializing table and widgets, delay all item fetches until
@@ -109,7 +127,7 @@ angular.module('fireh_angular_table')
                     }
                 }
 
-                var payload = angular.copy(scope.dataParams);
+                var payload = _.cloneDeep(scope.dataParams);
 
                 if (options.page === 'next') {
                     payload.page += 1;
@@ -161,17 +179,20 @@ angular.module('fireh_angular_table')
                         fhtable.trigger('ajaxRequestFinished');
                     }
                 );
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemsTotalUpdated', function itemsTotalUpdated(event,
                     totalItems) {
 
                 scope.data.total = totalItems;
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('resetItems', function resetItems() {
                 fhtable.trigger('fetchItems', {flush: true, page: 1});
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('addMultipleValuesFilter', function(event, filterName,
                     filterValue) {
@@ -181,10 +202,7 @@ angular.module('fireh_angular_table')
 
                 function updateFilter(value) {
                     // save value into $scope.dataParams
-                    //
-                    // honestly I dunno, if you removed _.cloneDeep() weird
-                    // things will happen
-                    filters[filterName] = _.cloneDeep(value);
+                    filters[filterName] = value;
                     fhtable.trigger('filterUpdated', filterName, value);
                     fhtable.trigger('resetItems');
                 }
@@ -202,7 +220,8 @@ angular.module('fireh_angular_table')
                 } else {
                     updateFilter([filterValue]);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('removeMultipleValuesFilter', function(event, filterName,
                     filterValue) {
@@ -210,29 +229,15 @@ angular.module('fireh_angular_table')
                 var filters = scope.dataParams.filterBy;
                 var filter = filters[filterName];
 
-                function updateFilter(value) {
-                    // save value into $scope.dataParams
-                    //
-                    // honestly I dunno, if you removed _.cloneDeep() weird
-                    // things will happen
-                    // this function's scope.dataParams.filterBy, and the above
-                    // function's scope.dataParams.filterBy will become
-                    // disconnected
-                    //
-                    // possibly something to do with _.remove() in
-                    // itemDeselected event handler of FhSelectedItemsMixin
-                    filters[filterName] = _.cloneDeep(value);
-                    fhtable.trigger('filterUpdated', filterName, value);
-                    fhtable.trigger('resetItems');
-                }
-
                 if (filter) {
                     var items = _.remove(filter, filterValue);
                     if (items.length) {
-                        updateFilter(filter);
+                        fhtable.trigger('filterUpdated', filterName, filter);
+                        fhtable.trigger('resetItems');
                     }
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('setSingleValueFilter', function(event, filterName,
                     filterValue) {
@@ -240,7 +245,8 @@ angular.module('fireh_angular_table')
                 scope.dataParams.filterBy[filterName]  = filterValue;
                 fhtable.trigger('filterUpdated', filterName, filterValue);
                 fhtable.trigger('resetItems');
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('setOrder', function(event, sortingName, sortingValue) {
                 var list = scope.dataParams.orderBy;
@@ -313,33 +319,38 @@ angular.module('fireh_angular_table')
                 });
 
                 fhtable.trigger('resetItems');
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('setPageOffset', function(event, pageOffset) {
                 scope.dataParams.page = pageOffset;
                 fhtable.trigger('pageOffsetUpdated', pageOffset);
                 fhtable.trigger('fetchItems', {flush: true, page: pageOffset});
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('setPageSize', function(event, pageSize) {
                 scope.dataParams.pageSize = pageSize;
                 fhtable.trigger('pageSizeUpdated', pageSize);
                 fhtable.trigger('resetItems');
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('selectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
                     fhtable.trigger('itemSelected', item, options);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('deselectItem', function(event, itemId, options) {
                 var item = _.find(scope.data.items, itemId);
                 if (item) {
                     fhtable.trigger('itemDeselected', item, options);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('selectAllItems', function(event, options) {
                 _.forEach(scope.data.items, function(item) {
@@ -351,7 +362,8 @@ angular.module('fireh_angular_table')
                 _.forEach(scope.data.items, function(item) {
                     fhtable.trigger('itemDeselected', item, options);
                 });
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemAdded', function(event, newItem, oldItem, options) {
                 var id = _.pick(newItem, fhtable.items.identifierFields);
@@ -362,7 +374,8 @@ angular.module('fireh_angular_table')
                     scope.data.items.push(newItem);
                     fhtable.trigger('itemsTotalUpdated', scope.data.total + 1);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemDeleted', function(event, item, options) {
                 var id = _.pick(item, fhtable.items.identifierFields);
@@ -371,7 +384,8 @@ angular.module('fireh_angular_table')
                     var total = scope.data.total - items.length;
                     fhtable.trigger('itemsTotalUpdated', total < 0 ? 0 : total);
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
 
             fhtable.on('itemDataUpdated', function(event, newItem, oldItem,
                     options) {
@@ -381,7 +395,16 @@ angular.module('fireh_angular_table')
                 if (index !== -1) {
                     scope.data.items[index] = newItem;
                 }
-            });
+
+            }, result.eventCleanupCallbacks);
+
+            if (cleanupList) {
+                _.forEach(result.eventCleanupCallbacks, function(fn) {
+                    cleanupList.push(fn);
+                });
+            }
+
+            return result;
         };
     })
 
@@ -436,8 +459,10 @@ angular.module('fireh_angular_table')
                     transcluded_directive_attrname + ']'), function(eltr) {
 
                 var $el = angular.element(eltr);
-                $el.attr($el.attr(transcluded_directive_attrname),
-                        $el.attr(transcluded_directive_value_attrname));
+                $el.attr(
+                    $el.attr(transcluded_directive_attrname),
+                    $el.attr(transcluded_directive_value_attrname) || '');
+
                 $el.removeAttr(transcluded_directive_attrname);
             });
         };
@@ -495,12 +520,14 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhEventHandlersMixin', function() {
-        return function(eventHandlers, options) {
+        return function(eventHandlers, options, cleanupList) {
             var scope = options.scope;
             if (options.fhtable === void(0)) {
                 options.fhtable = scope.fhtable;
             }
             var fhtable = options.fhtable;
+
+            var result = {eventCleanupCallbacks: []};
 
             _.forEach(eventHandlers, function(callback, eventName) {
                 var callbackArray = _.castArray(callback);
@@ -510,8 +537,17 @@ angular.module('fireh_angular_table')
                     callbackOptions.nextCallback = lastCallback;
                     lastCallback = callback.bind(callbackOptions);
                 });
-                fhtable.on(eventName, lastCallback);
+                fhtable.on(eventName, lastCallback,
+                        result.eventCleanupCallbacks);
             });
+
+            if (cleanupList) {
+                _.forEach(result.eventCleanupCallbacks, function(fn) {
+                    cleanupList.push(fn);
+                });
+            }
+
+            return result;
         };
     })
 

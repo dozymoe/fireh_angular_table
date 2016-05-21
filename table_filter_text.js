@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -32,14 +33,17 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             //// element attributes
 
             var name = $attrs.fhpName || $attrs.fhTableFilterText || '*';
             var elementId = ElementIdMixin($attrs, 'fh-table-filter-text-');
 
-            $attrs.$observe('fhpPlaceholder', function(value) {
+            var unregFn = $attrs.$observe('fhpPlaceholder', function(value) {
                 $scope.placeholder = value;
             });
+            cleanupCallbacks.push(unregFn);
 
             TableDefinitionMixin($scope, $attrs);
 
@@ -57,7 +61,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             $scope.changeFilter = function changeFilter() {
@@ -72,7 +76,7 @@ angular.module('fireh_angular_table')
             displayEvents.filterUpdated = function(event, filterName,
                     filterValue) {
 
-                if (filterName === name) { $scope.value = filterValue }
+                if (filterName === name) { $scope.value = filterValue; }
             };
 
             CustomEventHandlersMixin(displayEvents, $attrs, fhtable);
@@ -84,7 +88,14 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
@@ -122,3 +133,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

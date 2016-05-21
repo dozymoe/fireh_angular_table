@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -25,6 +26,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             // fh-table-row borrows $scope.data from fh-table
 
             //// element attributes
@@ -69,7 +72,7 @@ angular.module('fireh_angular_table')
                     // allows for dynamic form-id
                     formId: FormIdMixin($scope, $attrs, $scope.original,
                             false, 'fh-table-row-')
-                }
+                };
             }
 
             $scope.cancel = function rowEditCancel() {
@@ -131,37 +134,40 @@ angular.module('fireh_angular_table')
                     value, options) {
 
                 // draft events are always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.draft[fieldName] = value;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
-            }
+            };
 
             actionEvents.draftUnsetField = function(event, item, fieldName,
                     value, options) {
 
                 // draft events are always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.draft[fieldName] = null;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
-            }
+            };
 
             actionEvents.editingBegin = function(event, draft, item, options) {
                 // editingBegin is always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.isEditing = true;
             };
 
             actionEvents.editingEnd = function(event, draft, item, options) {
                 // editingBegin is always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 $scope.isEditing = false;
             };
 
             actionEvents.updateFormData = function(event, item, options) {
                 // updateFormData is always related to a form
-                if (!$scope.formId || options.formId !== $scope.formId) { return }
+                if (!$scope.formId || options.formId !== $scope.formId) {
+                    return;
+                }
+
                 $scope.original = item;
                 $scope.draft = _.cloneDeep(item);
 
@@ -173,7 +179,7 @@ angular.module('fireh_angular_table')
 
             displayEvents.draftUpdated = function(event, draft, item, options) {
                 // draft events are always related to a form
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
 
                 _.forEach(draft, function(value, fieldName) {
                     $scope.data.modifiedFields[fieldName] =
@@ -186,7 +192,7 @@ angular.module('fireh_angular_table')
                     options) {
 
                 // only interested in form related activities
-                if (options.formId !== $scope.formId) { return }
+                if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('editingEnd', newItem, oldItem, options);
                 fhtable.trigger('resetDraft', oldItem, options);
             };
@@ -208,18 +214,18 @@ angular.module('fireh_angular_table')
             displayEvents.itemDeleted = function(event, item, options) {
                 // don't care which form it is, if the item was deleted then
                 // close it
-                if (!fhtable.isItemsEqual($scope.original, item)) { return }
+                if (!fhtable.isItemsEqual($scope.original, item)) { return; }
                 fhtable.trigger('editingEnd', item, item, options);
                 fhtable.trigger('resetDraft', item, options);
             };
 
             displayEvents.itemDeselected = function(event, item, options) {
-                if (!fhtable.isItemsEqual($scope.original, item)) { return }
+                if (!fhtable.isItemsEqual($scope.original, item)) { return; }
                 $scope.isSelected = false;
             };
 
             displayEvents.itemSelected = function(event, item, options) {
-                if (!fhtable.isItemsEqual($scope.original, item)) { return }
+                if (!fhtable.isItemsEqual($scope.original, item)) { return; }
                 $scope.isSelected = true;
             };
 
@@ -234,14 +240,22 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
 
             if (originalData) {
                 fhtable.trigger('updateFormData', originalData,
                         getEventOptions());
             }
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         return myDirective;
     }])
 ;
+}());

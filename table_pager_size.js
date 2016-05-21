@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -32,6 +33,8 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks = [];
+
             //// element attributes
 
             var pagerSize = $attrs.fhpDefaultPagerSize;
@@ -44,11 +47,11 @@ angular.module('fireh_angular_table')
 
             var fhtable = $scope.fhtable;
 
-            if (pagerSize) { pagerSize = parseInt(pagerSize.trim()) }
+            if (pagerSize) { pagerSize = parseInt(pagerSize.trim()); }
             if (pagerSizes) {
                 pagerSizes = _.transform(
                     pagerSizes.trim().split(/\s*,\s*/),
-                    function(result, value) { result.push(parseInt(value)) },
+                    function(result, value) { result.push(parseInt(value)); },
                     []);
             } else {
                 pagerSizes = [5, 10, 20, 50, 100];
@@ -64,7 +67,7 @@ angular.module('fireh_angular_table')
                 return {
                     // we use dynamic form-id of parent element
                     formId: $scope.formId
-                }
+                };
             }
 
             $scope.select = function select() {
@@ -72,7 +75,7 @@ angular.module('fireh_angular_table')
                         getEventOptions());
             };
 
-            if (pagerSize) { $scope.select() }
+            if (pagerSize) { $scope.select(); }
 
             //// events
 
@@ -93,7 +96,14 @@ angular.module('fireh_angular_table')
                     scope: $scope,
                     fhtable: fhtable,
                     optionsGetter: getEventOptions
-                });
+                },
+                cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+            });
         };
 
         myDirective.link = function(scope, el, attrs, ctrl, transclude) {
@@ -130,3 +140,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());

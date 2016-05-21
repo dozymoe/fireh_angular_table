@@ -8,12 +8,12 @@ if (window.require) {
 angular.module('fireh_angular_table')
 
     .factory('FhFormSessionStorage', function() {
-        var FhFormSessionStorage = function(userOptions) {
-            var options = _.merge(
+        var FhFormSessionStorage = function(options) {
+            var _config = _.merge(
                 {
                     pruneInterval: 300, // in seconds
                 },
-                userOptions);
+                options || {});
             var storage = window.sessionStorage;
 
             function getStorageKey(formId) {
@@ -21,6 +21,8 @@ angular.module('fireh_angular_table')
             }
 
             function _onDraftUpdated(event, draft, item, options) {
+                /* jshint validthis: true */
+
                 var widgetOptions = this.optionsGetter();
 
                 if (options.formId === widgetOptions.formId) {
@@ -55,6 +57,8 @@ angular.module('fireh_angular_table')
             }
 
             function _onUpdateFormData(event, item, options) {
+                /* jshint validthis: true */
+
                 var widgetOptions = this.optionsGetter();
 
                 if (!widgetOptions.formId ||

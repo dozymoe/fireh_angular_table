@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 angular.module('fireh_angular_table', [])
@@ -8,6 +9,8 @@ angular.module('fireh_angular_table', [])
             $rootScope) {
 
         var FhTableDefinition = function(settings) {
+            var self = this;
+
             _.merge(
                 this,
                 {
@@ -44,8 +47,10 @@ angular.module('fireh_angular_table', [])
 
             var scope = this.scope = $rootScope.$new();
 
-            this.on = function on(eventType, callback) {
-                scope.$on(eventType, callback);
+            this.on = function on(eventType, callback, cleanupList) {
+                var cleanupFunc = scope.$on(eventType, callback);
+                if (cleanupList) { cleanupList.push(cleanupFunc); }
+                return cleanupFunc;
             };
 
             this.trigger = function trigger() {
@@ -59,25 +64,33 @@ angular.module('fireh_angular_table', [])
                 var cleanedFilter = _.transform(
                     data.filterBy,
                     function(result, value, key) {
-                        if (!value) { return; }
-                        // if it's an array of objects with one property,
-                        // convert into array of the property values,
-                        // for example [{id: 1}, {id: 2}] into [1, 2]
-                        if (_.isArray(value)) {
-                            value = _.transform(
-                                value,
-                                function(result, value) {
-                                    if (_.isObject(value) &&
-                                            _.keys(value).length == 1) {
+                        var valueArray = _.transform(
+                            _.castArray(value),
+                            function(result, item) {
+                                // if it's an array of objects with one
+                                // property, convert into array of the property
+                                // values,
+                                // for example [{id: 1}, {id: 2}] into [1, 2]
+                                var itemId = self.getFilterId(key, item);
+                                if (!_.isObject(itemId)) {
+                                    result.push(itemId);
+                                    return;
+                                }
+                                var keys = _.keys(itemId);
+                                if (keys.length === 1) {
+                                    result.push(itemId[keys[0]]);
+                                    return;
+                                }
+                                result.push(itemId);
+                            },
+                            []);
 
-                                        value = _.values(value)[0];
-                                    }
-                                    result.push(value);
-                                });
+                        if (valueArray.length) {
+                            result.push([key, valueArray]);
                         }
-                        result.push([key, value]);
                     },
                     []);
+
                 // sort filter by name, save into object
                 var sortedFilter = _.sortBy(cleanedFilter, 0);
                 if (_.fromPairs) {
@@ -96,32 +109,52 @@ angular.module('fireh_angular_table', [])
             };
 
             this.POST2GETpayload = function POST2GETpayload(payload) {
-              var queryString = {},
-                  params;
+                var queryString = {},
+                      params;
 
-              _.forOwn(payload, function(item, key) {
-                if (key !== 'orderBy' && key !== 'filterBy') {
-                  queryString[key] = item;
-                }
-              });
+                _.forOwn(payload, function(item, key) {
+                    if (key !== 'orderBy' && key !== 'filterBy') {
+                        queryString[key] = item;
+                    }
+                });
 
-              // orderBy
-              params = _.transform(payload.orderBy, function(result, item) {
-                var direction = item[1] === 'desc' ? '-' : '';
-                    result.push(direction + item[0]);
-              }, []);
+                // orderBy
+                params = _.transform(
+                    payload.orderBy,
+                    function(result, item) {
+                        var direction = item[1] === 'desc' ? '-' : '';
+                        result.push(direction + item[0]);
+                    },
+                    []);
 
-              if (params.length) { queryString.orderBy = params.join(','); }
+                if (params.length) { queryString.orderBy = params.join(','); }
 
-              // filterBy
-              _.forOwn(payload.filterBy, function(item, key) {
-                if (_.isArray(item)) {
-                  item = item.join(',');
-                }
-                queryString['filterBy' + _.capitalize(key)] = item;
-              });
+                // filterBy
+                _.forOwn(payload.filterBy, function(item, key) {
+                    var itemArray = _.transform(
+                        _.castArray(item),
+                        function(result, item) {
+                            if (!_.isObject(item)) {
+                                result.push(item);
+                                return;
+                            }
+                            var idStr = self.identifierAsString(
+                                item,
+                                {
+                                    keyValueSeparator: ':',
+                                    keysSeparator: ':',
+                                    isItemId: true,
+                                });
 
-              return queryString;
+                            result.push(idStr);
+                        },
+                        []);
+
+                    var itemStr = itemArray.join(',');
+                    queryString['filterBy' + _.capitalize(key)] = itemStr;
+                });
+
+                return queryString;
             };
 
             this.getFieldId = function getFieldId(fieldName, item) {
@@ -172,15 +205,35 @@ angular.module('fireh_angular_table', [])
             this.identifierAsString = function identifierAsString(item,
                     options) {
 
-                if (options === void(0)) { options = {} }
+                if (options === void(0)) { options = {}; }
                 var keyValueSeparator = options.keyValueSeparator || '=';
                 var keysSeparator = options.keysSeparator || ';';
 
-                var id = _.pick(item, this.items.identifierFields);
-                var resultArray = _.transform(id, function(result, value, key) {
-                    result.push(key + keyValueSeparator + value);
-                }, []);
-                return resultArray.join(keysSeparator);
+                var id;
+
+                if (options.isItemId) {
+                    id = item;
+                } else {
+                    id = _.pick(item, this.items.identifierFields);
+                }
+
+                var keys = _.keys(id);
+
+                if (keys.length === 1) {
+                    return id[keys[0]];
+                } else {
+                    var resultArray = _.transform(
+                        id,
+                        function(result, value, key) {
+                            result.push(key + keyValueSeparator + value);
+                        },
+                        []);
+                    return resultArray.join(keysSeparator);
+                }
+            };
+
+            this.destroy = function destroy() {
+                scope.$destroy();
             };
 
             return this;
@@ -189,3 +242,4 @@ angular.module('fireh_angular_table', [])
         return FhTableDefinition;
     }])
 ;
+}());

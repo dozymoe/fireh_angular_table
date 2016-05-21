@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 
 if (window.require) {
@@ -20,6 +21,7 @@ angular.module('fireh_angular_table')
         };
 
         myDirective.controller = function($scope, $element, $attrs) {
+            var cleanupCallbacks;
             var callback_completed_fn;
 
             //// element attributes
@@ -64,9 +66,18 @@ angular.module('fireh_angular_table')
                                 'scroll.infiniteScrollHelper');
                     });
                 }
-            });
 
-            fhtable.on('itemsUpdateFailed', performIshAsyncComplete);
+            }, cleanupCallbacks);
+
+            fhtable.on('itemsUpdateFailed', performIshAsyncComplete,
+                    cleanupCallbacks);
+
+            //// cleanup
+
+            $scope.$on('$destroy', function() {
+                _.forEach(cleanupCallbacks, function(fn) { fn(); });
+                ish.destroy();
+            });
         };
 
         myDirective.link = function(scope, el, attrs) {
@@ -81,3 +92,4 @@ angular.module('fireh_angular_table')
         return myDirective;
     }])
 ;
+}());
