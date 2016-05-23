@@ -43,7 +43,7 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
-            $scope.data.modifiedFields = {};
+            $scope.modifiedFields = {};
 
             if (_.isEmpty(originalData)) {
                 $scope.original = {};
@@ -182,7 +182,7 @@ angular.module('fireh_angular_table')
                 if (options.formId !== $scope.formId) { return; }
 
                 _.forEach(draft, function(value, fieldName) {
-                    $scope.data.modifiedFields[fieldName] =
+                    $scope.modifiedFields[fieldName] =
                             !fhtable.isFieldsEqual(fieldName, value,
                             $scope.original[fieldName]);
                 });
