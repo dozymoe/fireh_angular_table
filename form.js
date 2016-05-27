@@ -110,12 +110,12 @@ angular.module('fireh_angular_table')
 
             actionEvents.updateFormData = function(event, item, options) {
                 if (options.formId !== $scope.formId) { return; }
+
                 $scope.original = item;
                 $scope.draft = _.cloneDeep(item);
 
-                fhtable.trigger('formDataUpdated', item, options);
+                fhtable.trigger('formDataUpdated', item, $scope.draft, options);
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
-                fhtable.trigger('editingBegin', $scope.draft, item, options);
             };
 
             var displayEvents = {};

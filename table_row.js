@@ -45,13 +45,8 @@ angular.module('fireh_angular_table')
 
             $scope.modifiedFields = {};
 
-            if (_.isEmpty(originalData)) {
-                $scope.original = {};
-                $scope.draft = {};
-            } else {
-                $scope.original = originalData;
-                $scope.draft = _.cloneDeep(originalData);
-            }
+            $scope.original = originalData;
+            $scope.draft = {};
             $scope.isEditing = false;
 
             var fhtable = $scope.fhtable;
@@ -88,6 +83,8 @@ angular.module('fireh_angular_table')
 
             $scope.edit = function rowEdit() {
                 displayNonEditableError();
+                fhtable.trigger('updateFormData', $scope.original,
+                        getEventOptions());
                 fhtable.trigger('editingBegin', $scope.draft, $scope.original,
                         getEventOptions());
             };
@@ -171,7 +168,7 @@ angular.module('fireh_angular_table')
                 $scope.original = item;
                 $scope.draft = _.cloneDeep(item);
 
-                fhtable.trigger('formDataUpdated', item, options);
+                fhtable.trigger('formDataUpdated', item, $scope.draft, options);
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
             };
 
@@ -242,11 +239,6 @@ angular.module('fireh_angular_table')
                     optionsGetter: getEventOptions
                 },
                 cleanupCallbacks);
-
-            if (originalData) {
-                fhtable.trigger('updateFormData', originalData,
-                        getEventOptions());
-            }
 
             //// cleanup
 

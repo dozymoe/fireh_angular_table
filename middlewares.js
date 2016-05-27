@@ -81,7 +81,7 @@ angular.module('fireh_angular_table')
                     scope.draft = _.cloneDeep(item);
                 }
 
-                fhtable.trigger('formDataUpdated', item, options);
+                fhtable.trigger('formDataUpdated', item, scope.draft, options);
                 fhtable.trigger('draftUpdated', scope.draft, item, options);
 
                 // we drop next callback (presumably the widget's original,
