@@ -103,7 +103,16 @@ angular.module('fireh_angular_table')
 
             $scope.create = function rowCreate() {
                 displayNonEditableError();
-                fhtable.trigger('addItem', $scope.draft, $scope.original,
+
+                var draft = $scope.draft;
+                // only submit whitelisted draft fields, the rest of the fields
+                // are taken from stored original data
+                if ($scope.editableFields.length) {
+                    draft = _.cloneDeep($scope.original);
+                    _.merge(draft, _.pick($scope.draft, $scope.editableFields));
+                }
+
+                fhtable.trigger('addItem', draft, $scope.original,
                         getEventOptions());
             };
 
