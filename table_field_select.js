@@ -123,7 +123,7 @@ angular.module('fireh_angular_table')
                     options) {
 
                 if (options.formId !== $scope.formId) { return; }
-                fhtable.trigger('itemSelected', item[name], getEventOptions());
+                fhtable.trigger('itemSelected', draft[name], getEventOptions());
 
             }, cleanupCallbacks);
 
