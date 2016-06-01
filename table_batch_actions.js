@@ -33,6 +33,8 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
+            // this is so we have a read-only copy of $scope.data.selectedItems
+            // that FhTable widget has
             SelectedItemsMixin($scope, {}, cleanupCallbacks);
 
             var fhtable = $scope.fhtable;

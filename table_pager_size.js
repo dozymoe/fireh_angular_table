@@ -50,8 +50,10 @@ angular.module('fireh_angular_table')
             if (pagerSize) { pagerSize = parseInt(pagerSize.trim()); }
             if (pagerSizes) {
                 pagerSizes = _.transform(
-                    pagerSizes.trim().split(/\s*,\s*/),
-                    function(result, value) { result.push(parseInt(value)); },
+                    pagerSizes.split(/\s*,\s*/),
+                    function(result, value) {
+                        result.push(parseInt(value.trim()));
+                    },
                     []);
             } else {
                 pagerSizes = [5, 10, 20, 50, 100];

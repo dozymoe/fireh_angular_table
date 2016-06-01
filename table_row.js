@@ -36,6 +36,8 @@ angular.module('fireh_angular_table')
             var editable = $attrs.fhpEditable !== void(0) &&
                     $attrs.fhpEditable !== 'false';
 
+            var editableFields = $attrs.fhpEditableFields;
+
             TableDefinitionMixin($scope, $attrs);
             // generate initial form-id
             FormIdMixin($scope, $attrs, originalData, editable,
@@ -43,6 +45,7 @@ angular.module('fireh_angular_table')
 
             //// scope variables
 
+            $scope.editableFields = [];
             $scope.modifiedFields = {};
 
             $scope.original = originalData;
@@ -53,6 +56,15 @@ angular.module('fireh_angular_table')
 
             $scope.isSelected = _.find($scope.data.selectedItems,
                     fhtable.getItemId(originalData));
+
+            if (editableFields) {
+                _.forEach(editableFields.split(/\s*,\s*/), function(fieldStr) {
+                    var fieldName = fieldStr.trim();
+                    if (fieldName.length === 0) { return; }
+                    $scope.editableFields.push(fieldName);
+                });
+                $scope.editableFields.sort();
+            }
 
             //// scope functions
 
@@ -97,7 +109,16 @@ angular.module('fireh_angular_table')
 
             $scope.save = function rowSave() {
                 displayNonEditableError();
-                fhtable.trigger('updateItemData', $scope.draft, $scope.original,
+
+                var draft = $scope.draft;
+                // only submit whitelisted draft fields, the rest of the fields
+                // are taken from stored original data
+                if ($scope.editableFields.length) {
+                    draft = _.cloneDeep($scope.original);
+                    _.merge(draft, _.pick($scope.draft, $scope.editableFields));
+                }
+
+                fhtable.trigger('updateItemData', draft, $scope.original,
                         getEventOptions());
             };
 
@@ -124,6 +145,21 @@ angular.module('fireh_angular_table')
             };
 
             //// events
+
+            fhtable.on('addEditableField', function(event, fieldName,
+                    options) {
+
+                // draft events are always related to a form
+                if (options.formId !== $scope.formId) { return; }
+
+                var indexOfFn = _.sortedIndexOf ? _.sortedIndexOf : _.indexOf;
+                var index = indexOfFn($scope.editableFields, fieldName);
+                if (index === -1) {
+                    $scope.editableFields.push(fieldName);
+                    $scope.editableFields.sort();
+                }
+
+            }, cleanupCallbacks);
 
             var actionEvents = {};
 
@@ -159,14 +195,29 @@ angular.module('fireh_angular_table')
                 $scope.isEditing = false;
             };
 
+            actionEvents.resetDraft = function(event, newItem, oldItem,
+                    options) {
+
+                // resetDraft is always related to a form
+                if (options.formId !== $scope.formId) { return; }
+
+                $scope.draft = _.cloneDeep(newItem);
+
+                fhtable.trigger('draftUpdated', $scope.draft, newItem, options);
+            };
+
             actionEvents.updateFormData = function(event, item, options) {
                 // updateFormData is always related to a form
                 if (!$scope.formId || options.formId !== $scope.formId) {
                     return;
                 }
 
+                if (!fhtable.isItemsEqual($scope.original, item) ||
+                        _.isEmpty($scope.draft)) {
+
+                    $scope.draft = _.cloneDeep(item);
+                }
                 $scope.original = item;
-                $scope.draft = _.cloneDeep(item);
 
                 fhtable.trigger('formDataUpdated', item, $scope.draft, options);
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
@@ -191,7 +242,7 @@ angular.module('fireh_angular_table')
                 // only interested in form related activities
                 if (options.formId !== $scope.formId) { return; }
                 fhtable.trigger('editingEnd', newItem, oldItem, options);
-                fhtable.trigger('resetDraft', oldItem, options);
+                fhtable.trigger('resetDraft', newItem, oldItem, options);
             };
 
             displayEvents.itemDataUpdated = function(event, newItem, oldItem,
@@ -200,7 +251,7 @@ angular.module('fireh_angular_table')
                 if (options.formId === $scope.formId) {
                     // form related activities
                     fhtable.trigger('editingEnd', newItem, oldItem, options);
-                    fhtable.trigger('resetDraft', oldItem, options);
+                    fhtable.trigger('resetDraft', newItem, oldItem, options);
                 } else if (fhtable.isItemsEqual($scope.original, oldItem)) {
                     // order our own form data to be updated
                     fhtable.trigger('updateFormData', newItem,
@@ -213,7 +264,7 @@ angular.module('fireh_angular_table')
                 // close it
                 if (!fhtable.isItemsEqual($scope.original, item)) { return; }
                 fhtable.trigger('editingEnd', item, item, options);
-                fhtable.trigger('resetDraft', item, options);
+                fhtable.trigger('resetDraft', {}, item, options);
             };
 
             displayEvents.itemDeselected = function(event, item, options) {

@@ -19,6 +19,9 @@ angular.module('fireh_angular_table')
 
 
     .factory('FhSelectedItemsMixin', function() {
+        // keep this mixin passive, don't trigger unnecessary events, it's
+        // being used by widgets to keep copies of selectedItems
+
         return function(scope, options, cleanupList) {
             var fhtable = scope.fhtable;
 

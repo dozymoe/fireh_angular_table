@@ -151,6 +151,8 @@ angular.module('fireh_angular_table')
                 },
                 cleanupCallbacks);
 
+            parentFhtable.trigger('addEditableField', name, getEventOptions());
+
             //// cleanup
 
             $scope.$on('$destroy', function() {
