@@ -33,7 +33,7 @@ angular.module('fireh_angular_table')
             //// element attributes
 
             var originalData = $scope[$attrs.fhpFormItem];
-            var editableFields = $attrs.fhpEditableFields;
+            var editableFields = $attrs.fhpEditableFields || '';
 
             TableDefinitionMixin($scope, $attrs, 'fhForm');
             // generate initial form-id
