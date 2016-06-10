@@ -36,7 +36,7 @@ angular.module('fireh_angular_table')
             var editable = $attrs.fhpEditable !== void(0) &&
                     $attrs.fhpEditable !== 'false';
 
-            var editableFields = $attrs.fhpEditableFields;
+            var editableFields = $attrs.fhpEditableFields || '';
 
             TableDefinitionMixin($scope, $attrs);
             // generate initial form-id
@@ -57,14 +57,12 @@ angular.module('fireh_angular_table')
             $scope.isSelected = _.find($scope.data.selectedItems,
                     fhtable.getItemId(originalData));
 
-            if (editableFields) {
-                _.forEach(editableFields.split(/\s*,\s*/), function(fieldStr) {
-                    var fieldName = fieldStr.trim();
-                    if (fieldName.length === 0) { return; }
-                    $scope.editableFields.push(fieldName);
-                });
-                $scope.editableFields.sort();
-            }
+            _.forEach(editableFields.split(/\s*,\s*/), function(fieldStr) {
+                var fieldName = fieldStr.trim();
+                if (fieldName.length === 0) { return; }
+                $scope.editableFields.push(fieldName);
+            });
+            $scope.editableFields.sort();
 
             //// scope functions
 

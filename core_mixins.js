@@ -423,7 +423,7 @@ angular.module('fireh_angular_table')
          *
          * The temporary attribute (data-fh-transcluded) will be removed.
          */
-        return function(el, clone) {
+        return function(element, clone) {
             var transcluded_pane_attrname = 'data-fh-transclude-pane';
             var transcluded_directive_attrname = 'data-fh-transcluded';
             var transcluded_directive_value_attrname =
@@ -444,7 +444,7 @@ angular.module('fireh_angular_table')
                 elpanes.content = clone;
             }
 
-            _.forEach(el[0].querySelectorAll('[' +
+            _.forEach(element[0].querySelectorAll('[' +
                     transcluded_pane_attrname +']'), function(elpane) {
 
                 var $el = angular.element(elpane);
@@ -458,7 +458,7 @@ angular.module('fireh_angular_table')
 
             //// data-fh-transcluded
 
-            _.forEach(el[0].querySelectorAll('[' +
+            _.forEach(element[0].querySelectorAll('[' +
                     transcluded_directive_attrname + ']'), function(eltr) {
 
                 var $el = angular.element(eltr);
