@@ -58,9 +58,9 @@ angular.module('fireh_angular_table')
                 }
             }
 
-            fhtable.on('itemsUpdated', function(event, options) {
+            fhtable.on('itemsTotalUpdated', function(event, total, count) {
                 performIshAsyncComplete();
-                if (options.hasNextItems) {
+                if (count < total) {
                     $timeout(function() {
                         ish.$scrollContainer.trigger(
                                 'scroll.infiniteScrollHelper');

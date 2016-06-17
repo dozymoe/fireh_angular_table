@@ -166,20 +166,21 @@ angular.module('fireh_angular_table')
                         Array.prototype.push.apply(scope.data.items,
                                 response.items);
 
-                        var updateNotifOptions = {
-                            hasNextItems: scope.data.items.length <
-                                    response.total
-                        };
-                        fhtable.trigger('itemsUpdated', updateNotifOptions);
-                        fhtable.trigger('itemsTotalUpdated', response.total);
+                        fhtable.trigger('itemsUpdated', scope.data.items);
+
+                        fhtable.trigger('itemsTotalUpdated', response.total,
+                                scope.data.items.length);
 
                         // update all local cache
                         _.forEach(response.items, function(item) {
                             fhtable.trigger('itemDataUpdated', item, item, {});
                         });
                     },
-                    function (err) {
+                    function (response) {
                         fhtable.trigger('ajaxRequestFinished');
+
+                        fhtable.trigger('itemsUpdateFailed', response.status,
+                                response.data, scope.data.items);
                     }
                 );
 
@@ -375,7 +376,9 @@ angular.module('fireh_angular_table')
                     scope.data.items[index] = newItem;
                 } else {
                     scope.data.items.push(newItem);
-                    fhtable.trigger('itemsTotalUpdated', scope.data.total + 1);
+
+                    var total = scope.data.total + 1;
+                    fhtable.trigger('itemsTotalUpdated', total, total);
                 }
 
             }, result.eventCleanupCallbacks);
@@ -385,7 +388,8 @@ angular.module('fireh_angular_table')
                 var items = _.remove(scope.data.items, id);
                 if (items.length) {
                     var total = scope.data.total - items.length;
-                    fhtable.trigger('itemsTotalUpdated', total < 0 ? 0 : total);
+                    if (total < 0) { total = 0; }
+                    fhtable.trigger('itemsTotalUpdated', total, total);
                 }
 
             }, result.eventCleanupCallbacks);
