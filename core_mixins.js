@@ -164,15 +164,15 @@ angular.module('fireh_angular_table')
                             scope.dataParams.page = payload.page;
                         }
                         Array.prototype.push.apply(scope.data.items,
-                                response.items);
+                                response.data.items);
 
                         fhtable.trigger('itemsUpdated', scope.data.items);
 
-                        fhtable.trigger('itemsTotalUpdated', response.total,
-                                scope.data.items.length);
+                        fhtable.trigger('itemsTotalUpdated',
+                                response.data.total, scope.data.items.length);
 
                         // update all local cache
-                        _.forEach(response.items, function(item) {
+                        _.forEach(response.data.items, function(item) {
                             fhtable.trigger('itemDataUpdated', item, item, {});
                         });
                     },
