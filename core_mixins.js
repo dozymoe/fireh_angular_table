@@ -564,7 +564,12 @@ angular.module('fireh_angular_table')
             function generateFormId(name) {
                 if (!_.isEmpty(item)) {
                     // dynamic form-id based on identifier-fields
-                    var id = scope.fhtable.identifierAsString(item);
+                    var id = scope.fhtable.identifierAsString(
+                        item,
+                        {
+                            keyValueSeparator: '',
+                            keysSeparator: '-',
+                        });
                     return name + id;
                 } else {
                     // this will create totally random form-id which is

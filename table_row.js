@@ -52,6 +52,8 @@ angular.module('fireh_angular_table')
             $scope.draft = {};
             $scope.isEditing = false;
 
+            $scope.formErrors = {};
+
             var fhtable = $scope.fhtable;
 
             $scope.isSelected = _.find($scope.data.selectedItems,
@@ -168,6 +170,11 @@ angular.module('fireh_angular_table')
 
             }, cleanupCallbacks);
 
+            fhtable.on('setFormErrors', function(event, errors, options) {
+                if (options.formId !== $scope.formId) { return; }
+                $scope.formErrors = errors;
+            });
+
             var actionEvents = {};
 
             actionEvents.draftSetField = function(event, item, fieldName,
@@ -209,6 +216,10 @@ angular.module('fireh_angular_table')
                 if (options.formId !== $scope.formId) { return; }
 
                 $scope.draft = _.cloneDeep(newItem);
+                if (!_.isEmpty($scope.formErrors))
+                {
+                    $scope.formErrors = {};
+                }
 
                 fhtable.trigger('draftUpdated', $scope.draft, newItem, options);
             };
