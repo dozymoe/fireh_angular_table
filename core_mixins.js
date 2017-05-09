@@ -148,7 +148,7 @@ angular.module('fireh_angular_table')
                 fhtable.trigger('ajaxRequestStarted');
 
                 var resourceGetter = fhtable.items.getter(
-                        fhtable.createQueryPayload(payload));
+                        fhtable.createQueryPayload(payload), fhtable);
 
                 if (resourceGetter.$promise) {
                     resourceGetter = resourceGetter.$promise;
