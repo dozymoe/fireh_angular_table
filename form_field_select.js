@@ -51,6 +51,7 @@ angular.module('fireh_angular_table')
             var orderDir = $attrs.fhpOrderDir || 'asc';
             var multipleSelection = $attrs.fhpSingleSelection === void(0);
             var elementId = ElementIdMixin($attrs, 'fh-form-field-select-');
+            var elementWrapperClass = $attrs.fhpElementWrapperClass;
 
             TableDefinitionMixin($scope, $attrs);
 
@@ -75,6 +76,7 @@ angular.module('fireh_angular_table')
             $scope.name = name;
             $scope.elementId = elementId;
             $scope.popupElementId = elementId + '-popup';
+            $scope.elementWrapperClass = elementWrapperClass;
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize; }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]]; }
@@ -153,27 +155,29 @@ angular.module('fireh_angular_table')
                 '<div class="dropdown fh-table-filter-select"> ' +
                 '  <div data-fh-transclude-pane="header"></div> ' +
 
-                '  <button class="btn btn-default dropdown-toggle" ' +
-                '      type="button" id="{{ elementId }}" ' +
-                '      data-toggle="dropdown" aria-haspopup="true" ' +
-                '      aria-expanded="false"> ' +
+                '  <div class="{{ elementWrapperClass }}"> ' +
+                '    <button class="btn btn-default dropdown-toggle" ' +
+                '        type="button" id="{{ elementId }}" ' +
+                '        data-toggle="dropdown" aria-haspopup="true" ' +
+                '        aria-expanded="false"> ' +
 
-                '    <span data-fh-transclude-pane="caption"></span> ' +
+                '      <span data-fh-transclude-pane="caption"></span> ' +
 
-                '    <span ng-if="!data.selectedItems.length" ' +
-                '        class="fa fa-caret-down"></span> ' +
+                '      <span ng-if="!data.selectedItems.length" ' +
+                '          class="fa fa-caret-down"></span> ' +
 
-                '    <span ng-if="data.selectedItems.length" ' +
-                '        class="fa fa-caret-square-o-down"></span> ' +
+                '      <span ng-if="data.selectedItems.length" ' +
+                '          class="fa fa-caret-square-o-down"></span> ' +
 
-                '  </button> ' +
+                '    </button> ' +
 
-                '  <div data-fh-transclude-pane="footer"></div> ' +
+                '    <div data-fh-transclude-pane="footer"></div> ' +
 
-                '  <div class="dropdown-menu" id="{{ popupElementId }}" ' +
-                '      aria-labelledby="{{ elementId }}"> ' +
+                '    <div class="dropdown-menu" id="{{ popupElementId }}" ' +
+                '        aria-labelledby="{{ elementId }}"> ' +
 
-                '    <div data-fh-transclude-pane="popup"></div> ' +
+                '      <div data-fh-transclude-pane="popup"></div> ' +
+                '    </div> ' +
                 '  </div> ' +
                 '</div> ';
 
