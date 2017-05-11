@@ -59,6 +59,7 @@ angular.module('fireh_angular_table')
             var pageSize = $attrs.fhpSize;
             var orderBy = $attrs.fhpOrderBy;
             var orderDir = $attrs.fhpOrderDir || 'asc';
+            var filterBy = $attrs.fhpFilterBy;
             var multipleSelection = $attrs.fhpSingleSelection === void(0);
             var elementId = ElementIdMixin($attrs, 'fh-table-field-select-');
 
@@ -88,6 +89,15 @@ angular.module('fireh_angular_table')
 
             if (pageSize) { $scope.dataParams.pageSize = pageSize; }
             if (orderBy) { $scope.dataParams.orderBy = [[orderBy, orderDir]]; }
+            if (filterBy)
+            {
+                $scope.$parent.$watch(filterBy, function(filter)
+                {
+                    $scope.dataParams.filterBy = filter;
+                    fhtable.trigger('resetItems');
+                });
+            }
+
             // update selectedItems
             if ($scope.draft && $scope.draft[name]) {
                 $scope.data.selectedItems = [$scope.draft[name]];

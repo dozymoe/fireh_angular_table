@@ -151,7 +151,7 @@ angular.module('fireh_angular_table', [])
                         []);
 
                     var itemStr = itemArray.join(',');
-                    queryString['filterBy' + _.capitalize(key)] = itemStr;
+                    queryString['filterBy-' + key] = itemStr;
                 });
 
                 return queryString;
