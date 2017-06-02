@@ -51,12 +51,16 @@ angular.module('fireh_angular_table')
 
             var fhtable = $scope.fhtable;
 
+            Array.prototype.push.apply($scope.editableFields,
+                    fhtable.editableFields);
+
             _.forEach(editableFields.split(/\s*,\s*/), function(fieldStr) {
                 var fieldName = fieldStr.trim();
                 if (fieldName.length === 0) { return; }
                 $scope.editableFields.push(fieldName);
             });
             $scope.editableFields.sort();
+            $scope.editableFields = _.sortedUniq($scope.editableFields);
 
             //// scope functions
 
@@ -141,7 +145,17 @@ angular.module('fireh_angular_table')
                     value, options) {
 
                 if (options.formId !== $scope.formId) { return; }
-                $scope.draft[fieldName] = value;
+                var field = $scope.draft;
+                var fieldNames = fieldName.split('.');
+                for (var ii=0; ii < fieldNames.length - 1; ii++)
+                {
+                    if (field[fieldNames[ii]] === void(0))
+                    {
+                        field[fieldNames[ii]] = {};
+                    }
+                    field = field[fieldNames[ii]];
+                }
+                field[fieldNames[fieldNames.length - 1]] = value;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
             };
@@ -150,7 +164,20 @@ angular.module('fireh_angular_table')
                     value, options) {
 
                 if (options.formId !== $scope.formId) { return; }
-                $scope.draft[fieldName] = null;
+                var field = $scope.draft;
+                var fieldNames = fieldName.split('.');
+                for (var ii=0; ii < fieldNames.length - 1; ii++)
+                {
+                    if (field[fieldNames[ii]] === void(0))
+                    {
+                        fhtable.trigger('draftUpdated', $scope.draft, item,
+                                options);
+
+                        return;
+                    }
+                    field = field[fieldNames[ii]];
+                }
+                field[fieldNames[fieldNames.length - 1]] = null;
 
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
             };
@@ -181,6 +208,11 @@ angular.module('fireh_angular_table')
 
                 fhtable.trigger('formDataUpdated', item, $scope.draft, options);
                 fhtable.trigger('draftUpdated', $scope.draft, item, options);
+            };
+
+            actionEvents.refresh = function(event, options) {
+                if (options.formId !== $scope.formId) { return; }
+                $scope.$apply();
             };
 
             var displayEvents = {};

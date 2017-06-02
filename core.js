@@ -36,7 +36,8 @@ angular.module('fireh_angular_table', [])
                     orderBy: [],
                     orderDefinition: {},
 
-                    services: []
+                    services: [],
+                    editableFields: [],
                 });
             _.merge(this, settings);
 
