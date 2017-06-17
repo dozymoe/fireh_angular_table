@@ -88,13 +88,21 @@ angular.module('fireh_angular_table')
             };
 
             $scope.delete = function rowDelete() {
-                displayNonEditableError();
+                if (!editable)
+                {
+                    displayNonEditableError();
+                    return;
+                }
                 fhtable.trigger('deleteItem', $scope.original,
                         getEventOptions());
             };
 
             $scope.edit = function rowEdit() {
-                displayNonEditableError();
+                if (!editable)
+                {
+                    displayNonEditableError();
+                    return;
+                }
                 fhtable.trigger('updateFormData', $scope.original,
                         getEventOptions());
                 fhtable.trigger('editingBegin', $scope.draft, $scope.original,
@@ -102,7 +110,11 @@ angular.module('fireh_angular_table')
             };
 
             $scope.create = function rowCreate() {
-                displayNonEditableError();
+                if (!editable)
+                {
+                    displayNonEditableError();
+                    return;
+                }
 
                 var draft = $scope.draft;
                 // only submit whitelisted draft fields, the rest of the fields
@@ -117,7 +129,11 @@ angular.module('fireh_angular_table')
             };
 
             $scope.save = function rowSave() {
-                displayNonEditableError();
+                if (!editable)
+                {
+                    displayNonEditableError();
+                    return;
+                }
 
                 var draft = $scope.draft;
                 // only submit whitelisted draft fields, the rest of the fields
@@ -132,7 +148,11 @@ angular.module('fireh_angular_table')
             };
 
             $scope.resetField = function resetField(fieldName) {
-                displayNonEditableError();
+                if (!editable)
+                {
+                    displayNonEditableError();
+                    return;
+                }
                 fhtable.trigger('draftSetField', $scope.original, fieldName,
                         $scope.original[fieldName], getEventOptions());
             };
