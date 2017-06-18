@@ -207,15 +207,19 @@ angular.module('fireh_angular_table', [])
                     options) {
 
                 if (options === void(0)) { options = {}; }
-                var keyValueSeparator = options.keyValueSeparator || '=';
-                var keysSeparator = options.keysSeparator || ';';
+                var keyValueSeparator = options.keyValueSeparator !== void(0)
+                        ? options.keyValueSeparator : '=';
+
+                var keysSeparator = options.keysSeparator !== void(0)
+                        ? options.keysSeparator : ';';
 
                 var id;
 
                 if (options.isItemId) {
                     id = item;
                 } else {
-                    id = _.pick(item, this.items.identifierFields);
+                    id = this.flattenObject(_.pick(item,
+                            this.items.identifierFields));
                 }
 
                 var keys = _.keys(id);
@@ -231,6 +235,28 @@ angular.module('fireh_angular_table', [])
                         []);
                     return resultArray.join(keysSeparator);
                 }
+            };
+
+            this.flattenObject = function flattenObject(obj, result, prefix)
+            {
+                if (result === void(0))
+                {
+                    result = {};
+                }
+                var self = this;
+                _.forEach(obj, function(item, key)
+                {
+                    var prefix_ = prefix === void(0) ? key : prefix + '.' + key;
+                    if (_.isObject(item))
+                    {
+                        self.flattenObject(item, result, prefix_);
+                    }
+                    else
+                    {
+                        result[prefix_] = item;
+                    }
+                });
+                return result;
             };
 
             this.destroy = function destroy() {
