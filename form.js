@@ -137,7 +137,7 @@ angular.module('fireh_angular_table')
             fhtable.on('setFormErrors', function(event, errors, options) {
                 if (options.formId !== $scope.formId) { return; }
                 $scope.formErrors = errors;
-            });
+            }, cleanupCallbacks);
 
             var actionEvents = {};
 
